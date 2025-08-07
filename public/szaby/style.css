@@ -15,6 +15,11 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
 }
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 .bg-video {
   position: fixed;
   top: 0;
