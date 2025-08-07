@@ -20,6 +20,14 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+/* --- új rész: mobilon engedjük a görgetést --- */
+@media (max-width: 768px) {
+  html, body {
+    overflow-y: auto;
+  }
+}
+
 .bg-video {
   position: fixed;
   top: 0;
@@ -119,7 +127,7 @@ html, body {
 }
 .music-title {
   margin-top: 0.2em;
-  color: var(--primary); /* Ugyanaz a szín mint a név és leírás */
+  color: var(--primary);
 }
 .music-controls {
   display: flex;
@@ -153,7 +161,7 @@ html, body {
 .progress { height: 100%; background: linear-gradient(90deg, #56e0f8 40%, #a8f3ff 100%); border-radius: 4px; width: 0; transition: width .15s; }
 .music-times {
   width: 100%; display: flex; justify-content: space-between;
-  font-size: .88em; color: var(--primary); margin-bottom: .1em; /* Ugyanaz a szín */
+  font-size: .88em; color: var(--primary); margin-bottom: .1em;
   font-family: 'Orbitron', monospace;
 }
 .discord-status-card {
@@ -189,7 +197,7 @@ html, body {
 .displayname {
   font-family: 'Orbitron', monospace;
   font-size: 2rem;
-  color: var(--primary); /* Ugyanaz a szín */
+  color: var(--primary);
   letter-spacing: 2px;
   text-shadow: 0 0 8px #fff;
   font-weight: 700;
@@ -197,7 +205,7 @@ html, body {
 }
 .bio-desc {
   margin-top: 0.2rem;
-  color: var(--primary); /* Ugyanaz a szín */
+  color: var(--primary);
   font-size: 1.05rem;
   text-align: center;
   max-width: 340px;
@@ -226,10 +234,8 @@ html, body {
 .bio-link img {
   width: 63%;
   min-width: 19px;
-  filter: none; /* Alap filter eltávolítva */
-  transition: filter 0.3s;
-  /* szín egységesítés: szürke helyett világoskék */
   filter: brightness(1) drop-shadow(0 0 4px var(--primary));
+  transition: filter 0.3s;
 }
 .bio-link:hover {
   background: #222;
@@ -237,28 +243,11 @@ html, body {
 .bio-link:hover img {
   filter: brightness(1.25) drop-shadow(0 0 6px var(--primary));
 }
-
-/* MÁRKÁS HOVER EFFEKTEK (elhagyható, ha csak az egységes kék kell) */
-.bio-link[href*="discord.com"]:hover {
-  background: #5865F2 !important;
-  filter: none !important;
-}
-.bio-link[href*="instagram.com"]:hover {
-  background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important;
-  filter: none !important;
-}
-.bio-link[href*="spotify.com"]:hover {
-  background: #1DB954 !important;
-  filter: none !important;
-}
-.bio-link[href*="youtube.com"]:hover {
-  background: #FF0000 !important;
-  filter: none !important;
-}
-.bio-link[href*="tiktok.com"]:hover {
-  background: linear-gradient(135deg, #69C9D0 0%, #EE1D52 100%) !important;
-  filter: none !important;
-}
+.bio-link[href*="discord.com"]:hover { background: #5865F2 !important; }
+.bio-link[href*="instagram.com"]:hover { background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important; }
+.bio-link[href*="spotify.com"]:hover { background: #1DB954 !important; }
+.bio-link[href*="youtube.com"]:hover { background: #FF0000 !important; }
+.bio-link[href*="tiktok.com"]:hover { background: linear-gradient(135deg, #69C9D0 0%, #EE1D52 100%) !important; }
 .discord-status-header {
   display: flex;
   align-items: center;
@@ -270,7 +259,7 @@ html, body {
   font-size: .96em;
   font-weight: 500;
   letter-spacing: .03em;
-  color: var(--primary); /* Ugyanaz a szín */
+  color: var(--primary);
   text-align: center;
 }
 .discord-status-state {
@@ -296,15 +285,14 @@ html, body {
   .main-flex { flex-direction: column; gap: 0; align-items: center; margin-top: 2.2rem;}
   .profile-card, .right-column, .music-card, .discord-status-card { min-width: unset; max-width: 97vw; width: 98vw;}
 }
+
 .volume-container {
   position: absolute;
   top: 16px;
   right: 20px;
   z-index: 2;
 }
-.music-card {
-  position: relative; /* szükséges a volume-containerhez */
-}
+.music-card { position: relative; }
 .volume-btn {
   background: linear-gradient(90deg,#fff 60%,#56e0f8 100%);
   border: none;
@@ -328,7 +316,7 @@ html, body {
   z-index: 6;
 }
 .volume-slider {
-  writing-mode: bt-lr; /* vertical, bottom to top, left to right */
+  writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
   width: 26px;
   height: 110px;
@@ -337,7 +325,6 @@ html, body {
   accent-color: #56e0f8;
   outline: none;
 }
-/* --- Hangerő slider stílus --- */
 .volume-container {
   position: absolute;
   top: 18px;
@@ -347,9 +334,7 @@ html, body {
   flex-direction: column;
   align-items: flex-end;  
 }
-.music-card {
-  position: relative;
-}
+.music-card { position: relative; }
 .volume-btn {
   background: rgba(20,26,30,0.10);
   border: none;
