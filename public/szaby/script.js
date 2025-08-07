@@ -1,3 +1,35 @@
+// ---- Hóesés ----
+let snowCanvas = document.getElementById('snow');
+let sctx = snowCanvas.getContext('2d');
+let snowflakes = [];
+function resizeSnow() {
+  snowCanvas.width = window.innerWidth;
+  snowCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeSnow);
+resizeSnow();
+function snow() {
+  sctx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+  if (snowflakes.length < 100)
+    snowflakes.push({
+      x: Math.random() * snowCanvas.width,
+      y: -10,
+      r: Math.random() * 2 + 1,
+      s: Math.random() * 1.3 + 0.7,
+    });
+  for (let f of snowflakes) {
+    sctx.beginPath();
+    sctx.arc(f.x, f.y, f.r, 0, 2 * Math.PI);
+    sctx.fillStyle = '#fff9';
+    sctx.fill();
+    f.y += f.s;
+    f.x += Math.sin(f.y / 12) * 0.7;
+  }
+  snowflakes = snowflakes.filter((f) => f.y < snowCanvas.height + 10);
+  requestAnimationFrame(snow);
+}
+snow();
+
 // ---- MODERN MUSIC PLAYER SCRIPT + Cover ----
 const playlist = [
   { src: '/szaby/music/1.mp3', title: 'Első zene címe', cover: '/szaby/images/cover1.jpg' },
@@ -21,32 +53,28 @@ function loadSong(idx, autoPlay = false) {
   musicTitle.textContent = playlist[idx].title;
   if (musicCover) {
     musicCover.src = playlist[idx].cover || 'images/default_cover.jpg';
-    musicCover.classList.remove('playing');
+    musicCover.classList.remove('playing'); // Az osztályt is hozzáadjuk a borítóképhez
   }
   playBtn.innerHTML = `<i class="fas fa-play"></i>`;
   if (autoPlay) audio.play();
 }
 
-// **Autoplay kezelés**
-window.addEventListener('DOMContentLoaded', () => {
-  loadSong(current);          // Zene betöltése (nem indítjuk automatikusan, csak lentebb)
-  audio.muted = true;         // Némítva indítjuk
-  audio.play().then(() => {
-    // Ha sikerült elindítani, oké (de némítva van)
-  }).catch(() => {
-    // Ha nem sikerült elindítani (pl. blokkolva van), akkor első kattintásra indítjuk majd
-    document.body.addEventListener('click', playFirst, { once: true });
-  });
-  // Első kattintásnál bekapcsoljuk a hangot
-  function playFirst() {
-    audio.muted = false;
-    audio.play();
+// Zene automatikus indítása preload és autoplay-al
+window.addEventListener('load', () => {
+  loadSong(current, true);  // Elindítja a zenét a betöltés után
+  audio.muted = true;       // A hangot eleinte némítjuk
+  audio.play();             // Elindítjuk a lejátszást
+  // A hangot csak akkor kapcsoljuk vissza, ha felhasználói interakció történik
+});
+
+// Az audio elindul, és ha a felhasználó kattint, visszakapcsolja a hangot
+document.addEventListener('click', function () {
+  if (audio.muted) {
+    audio.muted = false;  // Visszakapcsoljuk a hangot
   }
 });
 
-// Ha valaki a play gombra kattint, mindig kapcsolja vissza a hangot
 playBtn.onclick = function () {
-  audio.muted = false;
   if (audio.paused) {
     audio.play();
     playBtn.innerHTML = `<i class="fas fa-pause"></i>`;
@@ -59,13 +87,11 @@ playBtn.onclick = function () {
 prevBtn.onclick = function () {
   current = (current - 1 + playlist.length) % playlist.length;
   loadSong(current, true);
-  audio.muted = false;
 };
 
 nextBtn.onclick = function () {
   current = (current + 1) % playlist.length;
   loadSong(current, true);
-  audio.muted = false;
 };
 
 audio.addEventListener('play', () => {
@@ -102,3 +128,100 @@ progressBar.onclick = function (e) {
   audio.currentTime = pos * audio.duration;
 };
 loadSong(current);
+
+// ---- DISCORD STATUS FROM RENDER API ----
+async function fetchDiscordStatus() {
+  try {
+    const response = await fetch('https://antilink.onrender.com/api/status');
+    const data = await response.json();
+    updateDiscordStatus(data);
+  } catch (error) {
+    console.error('Fetch Discord status failed', error);
+    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
+    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
+    const stateElem = document.getElementById('discordState');
+    stateElem.textContent = 'Offline';
+    stateElem.className = 'discord-status-state offline';
+    document.getElementById('discordAvatar').src = 'images/discord.png';
+  }
+}
+
+function updateDiscordStatus(data) {
+  if (!data || !data.userData) {
+    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
+    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
+    const stateElem = document.getElementById('discordState');
+    stateElem.textContent = 'Offline';
+    stateElem.className = 'discord-status-state offline';
+    document.getElementById('discordAvatar').src = 'images/discord.png';
+    return;
+  }
+
+  const { user, displayName, activities } = data.userData;
+  const discord_status = data.status;
+  const userId = user?.id || '1095731086513930260';
+
+  const avatarUrl = user?.avatar
+    ? `https://cdn.discordapp.com/avatars/${userId}/${user.avatar}.png`
+    : 'images/discord.png';
+
+  document.getElementById('discordAvatar').src = avatarUrl;
+  document.getElementById('discordUsername').textContent = displayName
+    ? displayName
+    : `${user?.username || 'Ismeretlen'}#${user?.discriminator || '0000'}`;
+
+const statusMap = {
+  online: 'Online',
+  dnd: 'Ne zavarjanak',
+  idle: 'Tétlen',
+  offline: 'Offline',
+};
+let statusText = statusMap[discord_status] || 'Ismeretlen státusz';
+
+if (activities && activities.length > 0) {
+  const customStatus = activities.find(a => a.type === 4);
+  if (customStatus && customStatus.state) {
+    statusText = customStatus.state;
+  }
+}
+
+const statusElem = document.getElementById('discordStatusText');
+const stateElem = document.getElementById('discordState');
+
+statusElem.textContent = statusText;
+// Itt legyen mindig a magyar státusz:
+stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
+
+stateElem.className = `discord-status-state ${discord_status}`;
+
+}
+
+// Frissítés 15 másodpercenként
+setInterval(fetchDiscordStatus, 15000);
+fetchDiscordStatus();
+
+// ---- VOLUME CONTROLS ----
+const volumeBtn = document.getElementById('volumeBtn');
+const volumeSliderWrap = document.getElementById('volumeSliderWrap');
+const volumeSlider = document.getElementById('volumeSlider');
+
+volumeBtn.addEventListener('click', () => {
+  volumeSliderWrap.style.display = volumeSliderWrap.style.display === 'block' ? 'none' : 'block';
+});
+
+document.addEventListener('mousedown', (e) => {
+  if (!volumeSliderWrap.contains(e.target) && !volumeBtn.contains(e.target)) {
+    volumeSliderWrap.style.display = 'none';
+  }
+});
+
+volumeSlider.addEventListener('input', (e) => {
+  audio.volume = e.target.valueAsNumber;
+  if (audio.volume == 0) {
+    volumeBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+  } else if (audio.volume < 0.5) {
+    volumeBtn.innerHTML = '<i class="fas fa-volume-down"></i>';
+  } else {
+    volumeBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+  }
+});
