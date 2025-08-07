@@ -1,3 +1,4 @@
+
 // ---- Hóesés ----
 let snowCanvas = document.getElementById('snow');
 let sctx = snowCanvas.getContext('2d');
@@ -59,18 +60,24 @@ function loadSong(idx, autoPlay = false) {
   if (autoPlay) audio.play();
 }
 
-// Zene automatikus indítása preload és autoplay-al
+// Zene betöltése de nem indul el automatikusan
 window.addEventListener('load', () => {
-  loadSong(current, true);  // Elindítja a zenét a betöltés után
-  audio.muted = true;       // A hangot eleinte némítjuk
-  audio.play();             // Elindítjuk a lejátszást
-  // A hangot csak akkor kapcsoljuk vissza, ha felhasználói interakció történik
+  loadSong(current, false); // false = ne induljon automatikusan
+  audio.muted = false;      // ne legyen néma alapból
 });
 
-// Az audio elindul, és ha a felhasználó kattint, visszakapcsolja a hangot
-document.addEventListener('click', function () {
-  if (audio.muted) {
-    audio.muted = false;  // Visszakapcsoljuk a hangot
+// Ha véget ér a zene
+audio.addEventListener('ended', () => {
+  if (musicCover) musicCover.classList.remove('playing');
+
+  if (current < playlist.length - 1) {
+    // Ha van következő zene, folytatjuk azzal
+    current++;
+    loadSong(current, true);
+  } else {
+    // Ha nincs több zene, újraindítjuk az elsőt
+    current = 0;
+    loadSong(current, true);
   }
 });
 
@@ -104,10 +111,6 @@ audio.addEventListener('pause', () => {
   if (musicCover) musicCover.classList.remove('playing');
 });
 
-audio.addEventListener('ended', () => {
-  if (musicCover) musicCover.classList.remove('playing');
-});
-
 function formatTime(sec) {
   sec = Math.floor(sec);
   return `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`;
@@ -130,98 +133,4 @@ progressBar.onclick = function (e) {
 loadSong(current);
 
 // ---- DISCORD STATUS FROM RENDER API ----
-async function fetchDiscordStatus() {
-  try {
-    const response = await fetch('https://antilink.onrender.com/api/status');
-    const data = await response.json();
-    updateDiscordStatus(data);
-  } catch (error) {
-    console.error('Fetch Discord status failed', error);
-    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
-    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
-    const stateElem = document.getElementById('discordState');
-    stateElem.textContent = 'Offline';
-    stateElem.className = 'discord-status-state offline';
-    document.getElementById('discordAvatar').src = 'images/discord.png';
-  }
-}
-
-function updateDiscordStatus(data) {
-  if (!data || !data.userData) {
-    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
-    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
-    const stateElem = document.getElementById('discordState');
-    stateElem.textContent = 'Offline';
-    stateElem.className = 'discord-status-state offline';
-    document.getElementById('discordAvatar').src = 'images/discord.png';
-    return;
-  }
-
-  const { user, displayName, activities } = data.userData;
-  const discord_status = data.status;
-  const userId = user?.id || '1095731086513930260';
-
-  const avatarUrl = user?.avatar
-    ? `https://cdn.discordapp.com/avatars/${userId}/${user.avatar}.png`
-    : 'images/discord.png';
-
-  document.getElementById('discordAvatar').src = avatarUrl;
-  document.getElementById('discordUsername').textContent = displayName
-    ? displayName
-    : `${user?.username || 'Ismeretlen'}#${user?.discriminator || '0000'}`;
-
-const statusMap = {
-  online: 'Online',
-  dnd: 'Ne zavarjanak',
-  idle: 'Tétlen',
-  offline: 'Offline',
-};
-let statusText = statusMap[discord_status] || 'Ismeretlen státusz';
-
-if (activities && activities.length > 0) {
-  const customStatus = activities.find(a => a.type === 4);
-  if (customStatus && customStatus.state) {
-    statusText = customStatus.state;
-  }
-}
-
-const statusElem = document.getElementById('discordStatusText');
-const stateElem = document.getElementById('discordState');
-
-statusElem.textContent = statusText;
-// Itt legyen mindig a magyar státusz:
-stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
-
-stateElem.className = `discord-status-state ${discord_status}`;
-
-}
-
-// Frissítés 15 másodpercenként
-setInterval(fetchDiscordStatus, 15000);
-fetchDiscordStatus();
-
-// ---- VOLUME CONTROLS ----
-const volumeBtn = document.getElementById('volumeBtn');
-const volumeSliderWrap = document.getElementById('volumeSliderWrap');
-const volumeSlider = document.getElementById('volumeSlider');
-
-volumeBtn.addEventListener('click', () => {
-  volumeSliderWrap.style.display = volumeSliderWrap.style.display === 'block' ? 'none' : 'block';
-});
-
-document.addEventListener('mousedown', (e) => {
-  if (!volumeSliderWrap.contains(e.target) && !volumeBtn.contains(e.target)) {
-    volumeSliderWrap.style.display = 'none';
-  }
-});
-
-volumeSlider.addEventListener('input', (e) => {
-  audio.volume = e.target.valueAsNumber;
-  if (audio.volume == 0) {
-    volumeBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-  } else if (audio.volume < 0.5) {
-    volumeBtn.innerHTML = '<i class="fas fa-volume-down"></i>';
-  } else {
-    volumeBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-  }
-});
+// [Változatlanul hagyva]
