@@ -17,13 +17,17 @@ body {
 }
 .bg-video {
   position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
   z-index: 0;
   filter: blur(4px) brightness(0.7);
   opacity: 0.82;
   pointer-events: none;
 }
+
 #snow {
   position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
   pointer-events: none; z-index: 1;
