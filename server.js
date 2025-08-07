@@ -278,19 +278,24 @@ app.post('/report', express.json(), async (req, res) => {
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
-  axios.post(ALERT_WEBHOOK, {
-    username: "Riasztóbot <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Gyanús tevékenység!',
-      description:
-        `**Oldal:** ${page || 'Ismeretlen'}\n` +
-        `**Művelet:** ${reason}\n` +
-        formatGeoDataReport(geoData),
-      color: 0xff0000
-    }]
-  }).catch(()=>{});
+  // >>> SAJÁT IP-K ESETÉN NE KÜLDJÜNK DISCORD ALERTET <<<
+  if (!MY_IPS.includes(ip)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "Riasztóbot <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'Gyanús tevékenység!',
+        description:
+          `**Oldal:** ${page || 'Ismeretlen'}\n` +
+          `**Művelet:** ${reason}\n` +
+          formatGeoDataReport(geoData),
+        color: 0xff0000
+      }]
+    }).catch(()=>{});
+  } else {
+    console.log("Saját IP – report (ALERT webhook) kihagyva.");
+  }
 
   res.json({ ok: true });
 });
