@@ -134,3 +134,72 @@ loadSong(current);
 
 // ---- DISCORD STATUS FROM RENDER API ----
 // [Változatlanul hagyva]
+
+
+// ---- DISCORD STATUS FROM RENDER API ----
+async function fetchDiscordStatus() {
+  try {
+    const response = await fetch('https://antilink.onrender.com/api/status');
+    const data = await response.json();
+    updateDiscordStatus(data);
+  } catch (error) {
+    console.error('Fetch Discord status failed', error);
+    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
+    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
+    const stateElem = document.getElementById('discordState');
+    stateElem.textContent = 'Offline';
+    stateElem.className = 'discord-status-state offline';
+    document.getElementById('discordAvatar').src = 'images/discord.png';
+  }
+}
+
+function updateDiscordStatus(data) {
+  if (!data || !data.userData) {
+    document.getElementById('discordUsername').textContent = 'Ismeretlen felhasználó';
+    document.getElementById('discordStatusText').textContent = 'Státusz nem elérhető';
+    const stateElem = document.getElementById('discordState');
+    stateElem.textContent = 'Offline';
+    stateElem.className = 'discord-status-state offline';
+    document.getElementById('discordAvatar').src = 'images/discord.png';
+    return;
+  }
+
+  const { user, displayName, activities } = data.userData;
+  const discord_status = data.status;
+  const userId = user?.id || '1095731086513930260';
+
+  const avatarUrl = user?.avatar
+    ? `https://cdn.discordapp.com/avatars/${userId}/${user.avatar}.png`
+    : 'images/discord.png';
+
+  document.getElementById('discordAvatar').src = avatarUrl;
+  document.getElementById('discordUsername').textContent = displayName
+    ? displayName
+    : `${user?.username || 'Ismeretlen'}#${user?.discriminator || '0000'}`;
+
+  const statusMap = {
+    online: 'Online',
+    dnd: 'Ne zavarjanak',
+    idle: 'Tétlen',
+    offline: 'Offline',
+  };
+  let statusText = statusMap[discord_status] || 'Ismeretlen státusz';
+
+  if (activities && activities.length > 0) {
+    const customStatus = activities.find(a => a.type === 4);
+    if (customStatus && customStatus.state) {
+      statusText = customStatus.state;
+    }
+  }
+
+  const statusElem = document.getElementById('discordStatusText');
+  const stateElem = document.getElementById('discordState');
+
+  statusElem.textContent = statusText;
+  stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
+  stateElem.className = `discord-status-state ${discord_status}`;
+}
+
+// Frissítés 15 másodpercenként
+setInterval(fetchDiscordStatus, 15000);
+fetchDiscordStatus();
