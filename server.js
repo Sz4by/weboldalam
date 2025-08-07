@@ -11,6 +11,12 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
+// --- KIVÉTELEK LISTÁJA .env-ből ---
+const VPN_EXCLUDE_IPS = (process.env.VPN_EXCLUDE_IPS || '')
+  .split(/[ ,;]+/)
+  .map(ip => ip.trim())
+  .filter(ip => ip.length > 0);
+
 // ---- Magyarosított formázó minden fontos adattal ----
 function formatGeoDataMagyar(geo) {
   if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
@@ -102,22 +108,22 @@ app.get('/', async (req, res) => {
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /szaby\n` +      // <- ITT!!!
+      description: `**Oldal:** /szaby\n` +
                    `**IP-cím:** ${ip}\n` +
                    formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  // VPN/PROXY ellenőrzés és ALERT log
-  if (await isVpnProxy(ip)) {
+  // VPN/PROXY ellenőrzés és ALERT log -->> KIVÉTELEK!
+  if (!VPN_EXCLUDE_IPS.includes(ip) && await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
       content: '',
       embeds: [{
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /szaby\n` +     // <-- ITT is szaby!
+        description: `**Oldal:** /szaby\n` +
                      `**IP-cím:** ${ip}\n` +
                      formatGeoDataMagyar(geoData),
         color: 0xff0000
@@ -157,8 +163,8 @@ app.get('/:folder', async (req, res, next) => {
     }]
   }).catch(()=>{});
 
-  // VPN/PROXY ellenőrzés és ALERT log
-  if (await isVpnProxy(ip)) {
+  // VPN/PROXY ellenőrzés és ALERT log -->> KIVÉTELEK!
+  if (!VPN_EXCLUDE_IPS.includes(ip) && await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
