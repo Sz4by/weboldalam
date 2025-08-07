@@ -7,10 +7,9 @@ const fs = require('fs');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
-// Magyarosított formázó minden fontos adattal
+// ---- Magyarosított formázó minden fontos adattal ----
 function formatGeoDataMagyar(geo) {
   if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
@@ -45,7 +44,6 @@ function formatGeoDataMagyar(geo) {
   );
 }
 
-// Helper a magyar VPN/proxy/TOR infóhoz
 function magyarVpnInfo(geo) {
   const check = v => v === true || v === "true";
   if (check(geo.proxy) || check(geo.vpn) || check(geo.tor)) {
@@ -87,30 +85,14 @@ async function getGeo(ip) {
   }
 }
 
-// --- Főoldal (/) logolás, VPN esetén ALERT webhook is! ---
+// --- Főoldal (/) csak VPN/proxy/TOR esetén logol ---
 app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Mindig logolunk a MAIN webhookba
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /\n` +
-                   `**IP-cím:** ${ip}\n` +
-                   `${magyarVpnInfo(geoData)}\n` +
-                   formatGeoDataMagyar(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  // Ha VPN/proxy/TOR, ALERT webhook is!
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
-      username: "Helyszíni Naplózó <3",
+      username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
       content: '',
       embeds: [{
@@ -119,7 +101,7 @@ app.get('/', async (req, res) => {
                      `**IP-cím:** ${ip}\n` +
                      `${magyarVpnInfo(geoData)}\n` +
                      formatGeoDataMagyar(geoData),
-        color: 0xff0000 // piros riasztás
+        color: 0xff0000
       }]
     }).catch(()=>{});
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
@@ -128,7 +110,7 @@ app.get('/', async (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// --- Dinamikus aloldalak (/kecske, /barmi) logolása, VPN esetén ALERT! ---
+// --- Dinamikus aloldalak (/kecske, /barmi) csak VPN esetén logol ---
 app.get('/:page', async (req, res, next) => {
   const pageName = req.params.page;
   if (pageName === 'report') return next();
@@ -139,25 +121,9 @@ app.get('/:page', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Mindig logolunk a MAIN webhookba
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${pageName}\n` +
-                   `**IP-cím:** ${ip}\n` +
-                   `${magyarVpnInfo(geoData)}\n` +
-                   formatGeoDataMagyar(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  // Ha VPN/proxy/TOR, ALERT webhook is!
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
-      username: "Helyszíni Naplózó <3",
+      username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
       content: '',
       embeds: [{
@@ -175,26 +141,29 @@ app.get('/:page', async (req, res, next) => {
   res.sendFile(filePath);
 });
 
-// --- Gyanús tevékenység reportolása (jobb kattintás, ctrl+u stb.) ---
+// --- Gyanús tevékenység reportolása (jobb kattintás, ctrl+u stb.), csak VPN esetén logol ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
-  axios.post(ALERT_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Gyanús tevékenység!',
-      description:
-        `**Oldal:** ${page || 'Ismeretlen'}\n` +
-        `**Művelet:** ${reason}\n` +
-        `**IP-cím:** ${ip}\n` +
-        formatGeoDataMagyar(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
+  if (isBlockedByVpnProxyTor(geoData)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "VPN figyelő <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'VPN/proxy vagy TOR-ral gyanús tevékenység!',
+        description:
+          `**Oldal:** ${page || 'Ismeretlen'}\n` +
+          `**Művelet:** ${reason}\n` +
+          `**IP-cím:** ${ip}\n` +
+          `${magyarVpnInfo(geoData)}\n` +
+          formatGeoDataMagyar(geoData),
+        color: 0xff0000
+      }]
+    }).catch(()=>{});
+  }
 
   res.json({ ok: true });
 });
