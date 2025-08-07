@@ -157,7 +157,7 @@ async function isVpnProxy(ip) {
   }
 }
 
-// --- FŐOLDAL logolása (szaby néven) ---
+// --- FŐOLDAL: szaby mappa index.html legyen mindig a főoldal ---
 app.get('/', async (req, res) => {
   const folderName = 'szaby';
   const ip = getClientIp(req);
@@ -190,16 +190,16 @@ app.get('/', async (req, res) => {
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
   }
 
-  // index.html visszaadása (public/szaby/index.html)
+  // Itt van a lényeg!
+  // Ha valaki /-t nyit meg, a szaby/index.html-t add vissza, és a root static mappát a /szaby mappára állítjuk.
   const filePath = path.join(__dirname, 'public', folderName, 'index.html');
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).send('404 Not Found');
-  }
+  res.sendFile(filePath);
 });
 
-// --- Dinamikus oldalak: pl. /szaby, /kecske, /barmi ---
+// --- Külön static middleware a /-hoz (hogy szaby legyen a statikus gyökér) ---
+app.use('/', express.static(path.join(__dirname, 'public', 'szaby')));
+
+// --- Dinamikus oldalak: pl. /kecske, /barmi, ahol saját mappában vannak static fájlok ---
 app.get('/:folder', async (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
@@ -241,6 +241,9 @@ app.get('/:folder', async (req, res, next) => {
   res.sendFile(filePath);
 });
 
+// --- Dinamikus statikus kiszolgálás minden /valami útvonalra is (pl. /szaby/style.css, /kecske/script.js) ---
+app.use(express.static(path.join(__dirname, 'public')));
+
 // --- Gyanús tevékenység reportolása ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
@@ -263,9 +266,6 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
-
-// --- Statikus fájlok kiszolgálása ---
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
