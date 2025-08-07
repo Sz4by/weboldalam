@@ -91,7 +91,7 @@ app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Minden látogató logolása a MAIN webhookba
+  // Mindig logol a MAIN webhookba (részletes adatokkal)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -106,7 +106,7 @@ app.get('/', async (req, res) => {
     }]
   }).catch(()=>{});
 
-  // Csak VPN/proxy/TOR esetén log az ALERT webhookba és tiltás
+  // VPN/proxy/TOR log az ALERT webhookba is, és tiltás
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -138,7 +138,7 @@ app.get('/:page', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Minden látogató logolása a MAIN webhookba
+  // Mindig logol a MAIN webhookba (részletes adatokkal)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -153,7 +153,7 @@ app.get('/:page', async (req, res, next) => {
     }]
   }).catch(()=>{});
 
-  // Csak VPN/proxy/TOR esetén log az ALERT webhookba és tiltás
+  // VPN/proxy/TOR log az ALERT webhookba is, és tiltás
   if (isBlockedByVpnProxyTor(geoData)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -174,29 +174,28 @@ app.get('/:page', async (req, res, next) => {
   res.sendFile(filePath);
 });
 
-// --- Gyanús tevékenység reportolása (jobb kattintás, ctrl+u stb.), csak VPN esetén logol ---
+// --- Gyanús tevékenység reportolása (jobb kattintás, ctrl+u stb.), MINDIG logol az ALERT-be! ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
-  if (isBlockedByVpnProxyTor(geoData)) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN figyelő <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      content: '',
-      embeds: [{
-        title: 'VPN/proxy vagy TOR-ral gyanús tevékenység!',
-        description:
-          `**Oldal:** ${page || 'Ismeretlen'}\n` +
-          `**Művelet:** ${reason}\n` +
-          `**IP-cím:** ${ip}\n` +
-          `${magyarVpnInfo(geoData)}\n` +
-          formatGeoDataMagyar(geoData),
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-  }
+  // Most már minden rossz kombináció logolva van az ALERT webhookba, bármilyen IP-ről jön!
+  axios.post(ALERT_WEBHOOK, {
+    username: "Riasztóbot <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Gyanús tevékenység!',
+      description:
+        `**Oldal:** ${page || 'Ismeretlen'}\n` +
+        `**Művelet:** ${reason}\n` +
+        `**IP-cím:** ${ip}\n` +
+        `${magyarVpnInfo(geoData)}\n` +
+        formatGeoDataMagyar(geoData),
+      color: 0xff0000
+    }]
+  }).catch(()=>{});
 
   res.json({ ok: true });
 });
