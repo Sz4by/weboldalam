@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>guns.lol stílusú bio + Music Player</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+</head>
+<body>
+  <video class="bg-video" src="background.mp4" autoplay loop muted playsinline></video>
+  <canvas id="snow"></canvas>
+  <div class="main-flex">
+    <div class="profile-card">
+      <div class="profile-visualizer">
+        <img src="images/rounded_profile.png" class="profile-img" id="profileImg" alt="Profilkép" />
+      </div>
+      <h1 class="displayname">Szaby</h1>
+      <div class="bio-desc">
+        Sziasztok! 23 éves vagyok, imádom a tech világot, a zenét, és szeretek új embereket megismerni.<br />
+        Gyakran programozok vagy szerkesztek valamit, de ha jó a társaság, vevő vagyok bármilyen spontán bulira is.<br />
+        Ha kérdésed van, írj bátran Discordon! 🤙
+      </div>
+      <div class="bio-links">
+        <a class="bio-link" href="https://discord.com/" target="_blank"><img src="images/discord.png" alt="Discord" /></a>
+        <a class="bio-link" href="https://www.instagram.com/" target="_blank"><img src="images/instagram.png" alt="Instagram" /></a>
+        <a class="bio-link" href="https://open.spotify.com/" target="_blank"><img src="images/spotify.png" alt="Spotify" /></a>
+        <a class="bio-link" href="https://www.youtube.com/" target="_blank"><img src="images/youtube.png" alt="YouTube" /></a>
+        <a class="bio-link" href="https://www.tiktok.com/" target="_blank"><img src="images/tiktok.png" alt="TikTok" /></a>
+      </div>
+    </div>
+    <div class="right-column">
+      <div class="music-card">
+        <!-- Volume control -->
+        <div class="volume-container" id="volumeContainer">
+          <button id="volumeBtn" class="volume-btn"><i class="fas fa-volume-up"></i></button>
+          <div class="volume-slider-wrap" id="volumeSliderWrap">
+            <input type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider" class="volume-slider" orient="vertical" />
+          </div>
+        </div>
+        <img src="images/cover1.jpg" alt="Zene borító" class="music-cover" id="musicCover" />
+        <div class="music-title" id="musicTitle">Első zene címe</div>
+        <div class="music-controls">
+          <button class="player-btn" id="prevBtn" title="Előző"><i class="fas fa-backward"></i></button>
+          <button class="player-btn" id="playBtn" title="Lejátszás/Szünet"><i class="fas fa-play"></i></button>
+          <button class="player-btn" id="nextBtn" title="Következő"><i class="fas fa-forward"></i></button>
+        </div>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress" id="progress"></div>
+        </div>
+        <div class="music-times">
+          <span id="currentTime">0:00</span>
+          <span id="duration">-0:00</span>
+        </div>
+        <audio id="audio" preload="metadata"></audio>
+      </div>
+      <div class="discord-status-card" id="discordStatus">
+        <div class="discord-status-left-right">
+          <div class="discord-status-left">
+            <img src="images/discord.png" class="discord-status-avatar" id="discordAvatar" alt="Discord profilkép" />
+          </div>
+          <div class="discord-status-right">
+            <div class="discord-status-username" id="discordUsername">Betöltés...</div>
+            <div class="discord-status-state online" id="discordState">Online</div>
+          </div>
+        </div>
+        <div class="discord-status-custom-text" id="discordStatusText">
+          Státusz betöltése...
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin: 1.3em auto 0 auto; text-align: center; opacity:.6; font-size:.95em;">
+    Készült by ChatGPT | guns.lol style + modern player | 2024
+  </div>
+  <script src="script.js"></script>
+  <script src="extra.js"></script>
+</body>
+</html>
