@@ -11,9 +11,8 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
-// TELJES LOG (FO LOG) -- ITT MINDEN INFÓT KÜLD
+// --- TELJES LOG (fő log, minden infóval) ---
 function formatGeoDataTeljes(geo) {
-  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
@@ -46,9 +45,8 @@ function formatGeoDataTeljes(geo) {
   );
 }
 
-// VPN/PROXY LOG -- EZT IS MINDENNEL TÖLTJÜK KI, később törölhetsz belőle bármelyiket
+// --- VPN/PROXY LOG (minden infóval, ha akarsz törölsz belőle) ---
 function formatGeoDataVpn(geo) {
-  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
@@ -81,9 +79,8 @@ function formatGeoDataVpn(geo) {
   );
 }
 
-// RIASZTÁS/ROSSZ KOMBINÁCIÓ LOG -- SZINTÉN MINDEN INFÓVAL
+// --- RIASZTÁS LOG (minden infóval, később törölhetsz) ---
 function formatGeoDataReport(geo) {
-  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
@@ -116,7 +113,7 @@ function formatGeoDataReport(geo) {
   );
 }
 
-// ---- IP lekérés minden lehetőséggel ----
+// ---- IP lekérés ----
 function getClientIp(req) {
   if (req.headers['cf-connecting-ip']) {
     return req.headers['cf-connecting-ip'];
@@ -130,7 +127,7 @@ function getClientIp(req) {
   return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
 }
 
-// ---- Geo adatok ipwhois.app API-ból, kulcs nélkül! ----
+// ---- Geo adatok ----
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
@@ -144,7 +141,7 @@ async function getGeo(ip) {
   }
 }
 
-// ---- VPN/Proxy check proxycheck.io-val ----
+// ---- VPN/Proxy check ----
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
@@ -160,26 +157,25 @@ async function isVpnProxy(ip) {
   }
 }
 
-// --- FŐOLDAL logolása (szaby néven, pl. szaby.com/) ---
+// --- FŐOLDAL logolása (szaby néven) ---
 app.get('/', async (req, res) => {
   const folderName = 'szaby';
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // FŐ WEBHOOK LOG (ország, város, IP stb.)
+  // FŐ WEBHOOK LOG (teljes)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${folderName}\n` +
-                   formatGeoDataTeljes(geoData),
+      description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  // VPN/PROXY ellenőrzés és ALERT log
+  // VPN/PROXY ellenőrzés és ALERT log (vpn formátum!)
   if (await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -187,8 +183,7 @@ app.get('/', async (req, res) => {
       content: '',
       embeds: [{
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /${folderName}\n` +
-                     formatGeoDataVpn(geoData),
+        description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
         color: 0xff0000
       }]
     }).catch(()=>{});
@@ -209,7 +204,6 @@ app.get('/:folder', async (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
 
-  // Keresi: public/FOLDER/index.html
   const dirPath = path.join(__dirname, 'public', folderName);
   const filePath = path.join(dirPath, 'index.html');
   if (!fs.existsSync(filePath)) return next();
@@ -217,20 +211,19 @@ app.get('/:folder', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // FŐ WEBHOOK LOG (ország, város, IP stb.)
+  // FŐ WEBHOOK LOG (teljes)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${folderName}\n` +
-                   formatGeoDataTeljes(geoData),
+      description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  // VPN/PROXY ellenőrzés és ALERT log
+  // VPN/PROXY ellenőrzés és ALERT log (vpn formátum!)
   if (await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -238,19 +231,17 @@ app.get('/:folder', async (req, res, next) => {
       content: '',
       embeds: [{
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /${folderName}\n` +
-                     formatGeoDataVpn(geoData),
+        description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
         color: 0xff0000
       }]
     }).catch(()=>{});
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
   }
 
-  // index.html visszaadása
   res.sendFile(filePath);
 });
 
-// --- Gyanús tevékenység reportolása (rossz kombinációk, jobb klikk stb.) ---
+// --- Gyanús tevékenység reportolása ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
@@ -273,10 +264,9 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
-// --- Statikus fájlok kiszolgálása mappán belül (pl. /szaby/style.css, /kecske/script.js) ---
+// --- Statikus fájlok kiszolgálása ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- 404 minden másra ---
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
 });
