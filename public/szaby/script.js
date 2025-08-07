@@ -33,9 +33,7 @@ snow();
 
 // ---- MODERN MUSIC PLAYER SCRIPT + Cover ----
 const playlist = [
-  { src: '/szaby/music/1.mp3', title: 'Első zene címe', cover: '/szaby/images/cover1.jpg' },
-  { src: 'music/2.mp3', title: 'Második Chill', cover: 'images/cover2.jpg' },
-  { src: 'music/3.mp3', title: 'Lazulás este', cover: 'images/cover3.jpg' },
+  { src: '/szaby/music/1.mp3', title: 'Look at Me Now', cover: '/szaby/images/cover1.jpg' },
 ];
 let current = 0;
 const audio = document.getElementById('audio');
