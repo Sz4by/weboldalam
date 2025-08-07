@@ -2,58 +2,41 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <title>Főoldal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rossz kombináció figyelés</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f3e6ff; color: #333; }
-    .container { max-width: 600px; margin: 40px auto; background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 6px 24px #bc56a688; }
-    a { color: #800080; text-decoration: none; font-weight: bold; }
-    a:hover { text-decoration: underline; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+    }
+    .content {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Üdv a Főoldalon!</h1>
-    <p>Ez a főoldal. Itt nem találsz semmi titkosat... vagy mégis? 😏</p>
-    <p>
-      <a href="/kecske">Nézd meg a kecskés oldalt!</a>
-    </p>
-    <small>Próbáld ki: <code>Ctrl+U</code>, <code>Ctrl+S</code> vagy nyisd meg a DevTools-t! (Az IP-d elküldjük a gazdának! 🕵️)</small>
+
+  <h1>Rossz kombináció figyelés - Weboldal</h1>
+  <div class="content">
+    <p>Ez egy tesztoldal, ami figyeli a rossz kombinációkat, például:</p>
+    <ul>
+      <li>Ctrl + U</li>
+      <li>Ctrl + Shift + I</li>
+      <li>Jobb kattintás</li>
+    </ul>
+    <p>Próbáld ki őket, és a rendszer rögzíti, ha valaki rossz kombinációt használ!</p>
   </div>
-  <script>
-    // Gyanús tevékenység jelentése szervernek, oldalcímmel!
-    function report(reason) {
-      fetch('/report', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-          reason, 
-          page: window.location.pathname 
-        })
-      });
-    }
 
-    // DevTools detektálás
-    let reported = false;
-    const element = new Image();
-    Object.defineProperty(element, 'id', {
-      get: function() {
-        if (!reported) {
-          report('DevTools megnyitás');
-          reported = true;
-        }
-      }
-    });
-    setInterval(function() {
-      console.log(element);
-    }, 1000);
-
-    // Ctrl+U, Ctrl+S detektálása
-    document.addEventListener('keydown', function(e) {
-      if (e.ctrlKey && ['u','s'].includes(e.key.toLowerCase())) {
-        report('Ctrl+' + e.key.toUpperCase());
-      }
-    });
-    <script src="script.js"></script>
-  </script>
+  <!-- A script.js csatolása -->
+  <script src="script.js"></script>
 </body>
 </html>
