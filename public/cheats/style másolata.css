@@ -1,0 +1,320 @@
+/* Alapértelmezett világos mód */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9; /* Világos szürke háttér */
+    color: #333; /* Sötét szöveg világos módban */
+    background-image: url('https://cdn.discordapp.com/attachments/1158510548095348839/1400787221052653580/aifaceswap-output.png?ex=688de842&is=688c96c2&hm=0ba098bc6bb235b4781f6da0a6fc1f87fc6a05456587cde3c71844e8e18a70e2&'); /* Világos háttérkép */
+    background-size: cover; /* A háttérkép kitölti az egész képernyőt */
+    background-position: center; /* A háttérkép középre igazítva */
+    background-attachment: fixed; /* A háttérkép fixálása */
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Fejléc - Világos mód */
+header {
+    background-color: #4e73df; /* Világos kék háttér világos módban */
+    color: #ffffff;
+    padding: 5px 0; /* Csökkentett padding a fejléchez, kisebb hely */
+    text-align: center;
+    border-bottom: 2px solid #2e59d9; /* Sötétebb kék alsó szegély */
+    position: relative;
+    font-size: 1em; /* Csökkentett betűméret */
+    font-weight: bold;
+    letter-spacing: 1px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Fejléc - Sötét mód */
+body[data-theme="dark"] header {
+    background-color: #333; /* Sötétszürke háttér sötét módban */
+    color: #ffffff; /* Fehér szöveg sötét módban */
+    border-bottom: 2px solid #444; /* Sötétebb szegély */
+}
+
+/* Navigáció menüpontok egymás mellett (PC verzió) */
+header nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center; /* Linkek középre igazítva */
+    margin: 0;
+    width: 100%;
+    flex-wrap: nowrap; /* A menüpontok soha ne törjenek sorba */
+}
+
+header nav ul li {
+    margin: 0 15px;
+}
+
+header nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 10px;
+}
+
+header nav ul li a:hover {
+    color: #f0f8ff;
+}
+
+/* Mobil verzió (mobil nézet) */
+@media (max-width: 768px) {
+    header nav ul {
+        flex-direction: row;  /* Mobil nézetben a linkek egymás mellett jelennek meg */
+        justify-content: center; /* A linkek a tetejére kerülnek */
+        width: 100%;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    header nav ul li {
+        margin: 5px 10px;
+        border: none;
+    }
+
+    header nav ul li a {
+        font-size: 1em;
+    }
+
+    header h1 {
+        font-size: 1.2em;
+    }
+
+    /* Termékek mobilon */
+    .product {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .product h2 {
+        font-size: 1.2em;
+    }
+
+    .product p {
+        font-size: 1em;
+    }
+
+    .product .download-link {
+        font-size: 14px;
+        padding: 10px 20px;
+    }
+}
+
+/* Termékek listája */
+.product-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px;
+}
+
+/* Termékek világos mód */
+.product {
+    background-color: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    margin: 15px;
+    padding: 20px;
+    width: 280px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.product:hover {
+    transform: scale(1.05);
+    background-color: #f0f8ff; /* Világos kék háttér a hover alatt */
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2); /* Erősebb árnyék világos módban */
+}
+
+.product h2 {
+    color: #4e73df;
+    font-size: 1.5em;
+}
+
+.product p {
+    color: #555555;
+    line-height: 1.5em;
+}
+
+.product .download-link {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 25px;
+    background-color: #007bff; /* Kék gomb világos módban */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.product .download-link:hover {
+    background-color: #0056b3;
+}
+
+/* Sötét mód */
+body[data-theme="dark"] {
+    background-color: #121212;
+    color: white;
+    background-image: url('https://cdn.discordapp.com/attachments/1158510548095348839/1400787419070070955/aifaceswap-output_1.png?ex=688de872&is=688c96f2&hm=b3e4ce5fa79f9b1febab0ad3563612be94b0441a59ae84e190310007de0b2024&'); /* Sötét háttérkép */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* Termékek sötét mód */
+body[data-theme="dark"] .product {
+    background-color: #333 !important;
+    color: white !important;
+    border: 2px solid #444 !important;
+}
+
+body[data-theme="dark"] .product h2,
+body[data-theme="dark"] .product p {
+    color: #ddd !important;
+}
+
+body[data-theme="dark"] .product .download-link {
+    background-color: #3e8e41 !important; /* Zöld gomb sötét módhoz */
+}
+
+body[data-theme="dark"] footer {
+    background-color: #333; /* Sötét háttér a láblécnek sötét módban */
+    color: white;
+}
+
+/* Lábléc */
+footer {
+    background-color: #4e73df; /* Világos kék háttér a láblécnek */
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 14px;
+    width: 100%;
+    bottom: 0;
+    z-index: 100;
+    margin-top: 50px; /* Helyet adunk a láblécnek */
+}
+
+/* Módosítás a termékek listájánál: */
+main {
+    margin-bottom: 80px; /* Biztosítjuk, hogy a lábléc ne takarja el a tartalmat */
+}
+
+/* Sötét mód lábléc */
+body[data-theme="dark"] footer {
+    background-color: #333;
+    color: white;
+}
+
+/* Világos/Sötét mód gomb */
+.mode-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #4e73df;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+body[data-theme="dark"] .mode-toggle {
+    background-color: #333; /* Sötét gomb sötét módhoz */
+    color: #fff;
+}
+
+/* Kulcs Másolása gomb - nincs fekete szegély */
+.product .copy-link {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 25px;
+    background-color: #007bff; /* Kék gomb világos módban */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none; /* Eltávolítjuk a szegélyt */
+}
+
+/* Sötét mód - Kulcs Másolása gomb */
+body[data-theme="dark"] .product .copy-link {
+    background-color: #3e8e41; /* Sötét háttér a gombhoz sötét módban */
+    color: white; /* Fehér szöveg a gombon sötét módban */
+}
+
+/* Kulcs Másolása gomb hover - világos mód */
+.product .copy-link:hover {
+    background-color: #0056b3; /* Sötétebb kék a hover alatt */
+}
+
+/* Kulcs Másolása gomb hover - sötét mód */
+body[data-theme="dark"] .product .copy-link:hover {
+    background-color: #666; /* Sötétebb háttér a hover alatt sötét módban */
+}
+
+/* A body elem ne alkalmazzon animációt az alap háttér és szöveg színek változtatásakor */
+body {
+    transition: none;
+}
+
+/* A szekciók címeinek középre igazítása */
+h2 {
+    text-align: center; /* Középre igazítja a címeket */
+    font-size: 2em; /* Méret állítása */
+    color: #4e73df; /* Kék szín a címekhez */
+    margin-bottom: 20px; /* Lejjebb hozza a címet a termékek előtt */
+}
+
+/* Kategória linkek középre helyezése */
+#product-categories nav ul {
+    display: flex;
+    justify-content: center; /* Középre igazítás */
+    list-style-type: none; /* Töröljük a pontokat a listából */
+    padding: 0;
+}
+
+#product-categories nav ul li {
+    margin: 0 15px; /* Kisebb margó, hogy ne legyenek túl közel */
+}
+
+#product-categories nav ul li a {
+    text-decoration: none; /* Aláhúzás eltávolítása */
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333; /* Szöveg színe */
+}
+
+#product-categories nav ul li a:hover {
+    color: #007bff; /* Hover szín */
+}
+
+/* Alapértelmezett világos téma */
+#product-categories nav ul li a {
+    text-decoration: none; /* Aláhúzás eltávolítása */
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333; /* Szöveg színe világos témában */
+    transition: color 0.3s ease; /* Színváltás animációja */
+}
+
+#product-categories nav ul li a:hover {
+    color: #007bff; /* Hover szín világos témában */
+}
+
+/* Sötét téma */
+body[data-theme="dark"] #product-categories nav ul li a {
+    color: #fff; /* Fehér szöveg sötét témában */
+}
+
+body[data-theme="dark"] #product-categories nav ul li a:hover {
+    color: #1e90ff; /* Hover szín sötét témában */
+}
