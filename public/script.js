@@ -1,38 +1,45 @@
-// Jobb kattintás tiltása és logolása
-document.addEventListener('contextmenu', function(e) {
-  e.preventDefault();
-  fetch('/report', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      reason: 'Jobb kattintás',
-      page: window.location.pathname
-    })
-  });
-  alert('A jobb kattintás le van tiltva ezen az oldalon!');
+// Ne engedj jobb kattintást
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();  // Megakadályozza a jobb kattintás menüt
+    reportBadActivity('Jobb kattintás blokkolva');
 });
 
-// Ctrl+U, Ctrl+S, Ctrl+Shift+I tiltása és logolása
-document.addEventListener('keydown', function(e) {
-  if ((e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'U' || e.key === 'S')) ||
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
-      (e.key === 'F12')) {
-    e.preventDefault();
-    let reason = '';
-    if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) reason = 'Ctrl+U';
-    else if (e.ctrlKey && (e.key === 's' || e.key === 'S')) reason = 'Ctrl+S';
-    else if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) reason = 'Ctrl+Shift+I';
-    else if (e.key === 'F12') reason = 'F12';
-    else reason = 'Ismeretlen tiltott kombináció';
+// Ne engedj Ctrl+U vagy Ctrl+Shift+I kombinációt
+document.addEventListener('keydown', (e) => {
+    // Ctrl+U (forrás megtekintés)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+U kombináció blokkolva');
+    }
 
+    // Ctrl+Shift+I (fejlesztői eszközök)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
+    }
+});
+
+// Rossz tevékenység logolása
+function reportBadActivity(reason) {
+    const page = window.location.pathname;
+    const reportData = {
+        reason: reason,
+        page: page
+    };
+
+    // Küldd el a jelentést a szervernek (itt az API endpoint-ot hívhatod meg)
     fetch('/report', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        reason: `Tiltott kombináció: ${reason}`,
-        page: window.location.pathname
-      })
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Jelentés elküldve:', data);
+    })
+    .catch(error => {
+        console.error('Hiba történt a jelentés küldésekor:', error);
     });
-    alert(`${reason} le van tiltva ezen az oldalon!`);
-  }
-});
+}
