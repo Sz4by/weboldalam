@@ -197,7 +197,6 @@ app.get('/', async (req, res) => {
 });
 
 // --- Külön static middleware a /-hoz (hogy szaby legyen a statikus gyökér) ---
-app.use('/', express.static(path.join(__dirname, 'public', 'szaby')));
 
 // --- Dinamikus oldalak: pl. /kecske, /barmi, ahol saját mappában vannak static fájlok ---
 app.get('/:folder', async (req, res, next) => {
