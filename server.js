@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
-// ---- Magyarosított formázó minden fontos adattal ----
+// Magyarosított formázó minden fontos adattal
 function formatGeoDataMagyar(geo) {
   if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
@@ -45,6 +45,20 @@ function formatGeoDataMagyar(geo) {
   );
 }
 
+// Helper a magyar VPN/proxy/TOR infóhoz
+function magyarVpnInfo(geo) {
+  const check = v => v === true || v === "true";
+  if (check(geo.proxy) || check(geo.vpn) || check(geo.tor)) {
+    return "⚠️ VPN/proxy vagy TOR használat: IGEN";
+  }
+  return "VPN/proxy vagy TOR használat: NEM";
+}
+
+function isBlockedByVpnProxyTor(geo) {
+  const check = v => v === true || v === "true";
+  return check(geo.proxy) || check(geo.vpn) || check(geo.tor);
+}
+
 // ---- IP lekérés minden lehetőséggel ----
 function getClientIp(req) {
   if (req.headers['cf-connecting-ip']) {
@@ -73,37 +87,48 @@ async function getGeo(ip) {
   }
 }
 
-// --- VPN/Proxy/TOR blokkoló, helyes típuskényszerítéssel! ---
-function isBlockedByVpnProxyTor(geoData) {
-  // Az ipwhois.app néha "true"/"false" stringet ad vissza, ezért pontosan vizsgálunk
-  const check = val => val === true || val === "true";
-  return check(geoData.proxy) || check(geoData.vpn) || check(geoData.tor);
-}
-
-// --- Főoldal (/) logolás, mindig működik ---
+// --- Főoldal (/) logolás, VPN esetén ALERT webhook is! ---
 app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  if (isBlockedByVpnProxyTor(geoData)) {
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
+  // Mindig logolunk a MAIN webhookba
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /\n` + formatGeoDataMagyar(geoData),
+      description: `**Oldal:** /\n` +
+                   `**IP-cím:** ${ip}\n` +
+                   `${magyarVpnInfo(geoData)}\n` +
+                   formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
+  // Ha VPN/proxy/TOR, ALERT webhook is!
+  if (isBlockedByVpnProxyTor(geoData)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "Helyszíni Naplózó <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
+        description: `**Oldal:** /\n` +
+                     `**IP-cím:** ${ip}\n` +
+                     `${magyarVpnInfo(geoData)}\n` +
+                     formatGeoDataMagyar(geoData),
+        color: 0xff0000 // piros riasztás
+      }]
+    }).catch(()=>{});
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// --- Dinamikus aloldalak (/kecske, /barmi) logolása ---
+// --- Dinamikus aloldalak (/kecske, /barmi) logolása, VPN esetén ALERT! ---
 app.get('/:page', async (req, res, next) => {
   const pageName = req.params.page;
   if (pageName === 'report') return next();
@@ -114,25 +139,43 @@ app.get('/:page', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  if (isBlockedByVpnProxyTor(geoData)) {
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
+  // Mindig logolunk a MAIN webhookba
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${pageName}\n` + formatGeoDataMagyar(geoData),
+      description: `**Oldal:** /${pageName}\n` +
+                   `**IP-cím:** ${ip}\n` +
+                   `${magyarVpnInfo(geoData)}\n` +
+                   formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
+  // Ha VPN/proxy/TOR, ALERT webhook is!
+  if (isBlockedByVpnProxyTor(geoData)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "Helyszíni Naplózó <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
+        description: `**Oldal:** /${pageName}\n` +
+                     `**IP-cím:** ${ip}\n` +
+                     `${magyarVpnInfo(geoData)}\n` +
+                     formatGeoDataMagyar(geoData),
+        color: 0xff0000
+      }]
+    }).catch(()=>{});
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
   res.sendFile(filePath);
 });
 
-// --- Gyanús tevékenység reportolása ---
+// --- Gyanús tevékenység reportolása (jobb kattintás, ctrl+u stb.) ---
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
@@ -147,6 +190,7 @@ app.post('/report', express.json(), async (req, res) => {
       description:
         `**Oldal:** ${page || 'Ismeretlen'}\n` +
         `**Művelet:** ${reason}\n` +
+        `**IP-cím:** ${ip}\n` +
         formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
