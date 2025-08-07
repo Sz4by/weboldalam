@@ -14,17 +14,18 @@ app.use(express.static('public'));
 
 // ---- IP lekérés minden lehetőséggel ----
 function getClientIp(req) {
-  const xff = req.headers['x-forwarded-for'];
-  const xri = req.headers['x-real-ip'];
-  const cfip = req.headers['cf-connecting-ip'];
-  const ip =
-    (cfip) ? cfip :
-    (xri) ? xri :
-    (xff && xff.split(',')[0].trim()) :
-    (req.socket.remoteAddress || req.connection.remoteAddress);
-
-  // Néha [::ffff:IP] formátumot ad vissza, abból kivesszük az IPv4-et
-  return ip?.replace(/^.*:/, '') || 'Ismeretlen';
+  // Először Cloudflare, aztán x-real-ip, aztán x-forwarded-for, végül remoteAddress
+  if (req.headers['cf-connecting-ip']) {
+    return req.headers['cf-connecting-ip'];
+  }
+  if (req.headers['x-real-ip']) {
+    return req.headers['x-real-ip'];
+  }
+  if (req.headers['x-forwarded-for']) {
+    return req.headers['x-forwarded-for'].split(',')[0].trim();
+  }
+  // IPv6 esetén [::ffff:192.0.2.1] --> 192.0.2.1
+  return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
 }
 
 async function getGeo(ip) {
@@ -123,6 +124,7 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
+// --- 404 minden másra ---
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
 });
