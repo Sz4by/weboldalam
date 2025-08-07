@@ -11,6 +11,152 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
+// --- TELJES LOG (fő log, minden infóval) ---
+function formatGeoDataTeljes(geo) {
+  return (
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
+    `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
+    `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
+    `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
+    `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
+    `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
+    `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
+    `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
+    `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
+    `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
+    `**Régió:** ${geo.region || 'Ismeretlen'}\n` +
+    `**Város:** ${geo.city || 'Ismeretlen'}\n` +
+    `**Szélesség:** ${geo.latitude || 'Ismeretlen'}\n` +
+    `**Hosszúság:** ${geo.longitude || 'Ismeretlen'}\n` +
+    `**ASN:** ${geo.asn || 'Ismeretlen'}\n` +
+    `**Szervezet:** ${geo.org || 'Ismeretlen'}\n` +
+    `**Hálózat:** ${geo.isp || 'Ismeretlen'}\n` +
+    `**Időzóna:** ${geo.timezone || 'Ismeretlen'}\n` +
+    `**Időzóna neve:** ${geo.timezone_name || 'Ismeretlen'}\n` +
+    `**Időzóna nyári idő eltolás:** ${geo.timezone_dstOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT eltolás:** ${geo.timezone_gmtOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT:** ${geo.timezone_gmt || 'Ismeretlen'}\n` +
+    `**Valuta:** ${geo.currency || 'Ismeretlen'}\n` +
+    `**Valuta kód:** ${geo.currency_code || 'Ismeretlen'}\n` +
+    `**Valuta szimbólum:** ${geo.currency_symbol || 'Ismeretlen'}\n` +
+    `**Valuta árfolyam:** ${geo.currency_rates || 'Ismeretlen'}\n` +
+    `**Valuta többes:** ${geo.currency_plural || 'Ismeretlen'}\n`
+  );
+}
+
+// --- VPN/PROXY LOG (minden infóval, ha akarsz törölsz belőle) ---
+function formatGeoDataVpn(geo) {
+  return (
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
+    `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
+    `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
+    `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
+    `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
+    `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
+    `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
+    `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
+    `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
+    `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
+    `**Régió:** ${geo.region || 'Ismeretlen'}\n` +
+    `**Város:** ${geo.city || 'Ismeretlen'}\n` +
+    `**Szélesség:** ${geo.latitude || 'Ismeretlen'}\n` +
+    `**Hosszúság:** ${geo.longitude || 'Ismeretlen'}\n` +
+    `**ASN:** ${geo.asn || 'Ismeretlen'}\n` +
+    `**Szervezet:** ${geo.org || 'Ismeretlen'}\n` +
+    `**Hálózat:** ${geo.isp || 'Ismeretlen'}\n` +
+    `**Időzóna:** ${geo.timezone || 'Ismeretlen'}\n` +
+    `**Időzóna neve:** ${geo.timezone_name || 'Ismeretlen'}\n` +
+    `**Időzóna nyári idő eltolás:** ${geo.timezone_dstOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT eltolás:** ${geo.timezone_gmtOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT:** ${geo.timezone_gmt || 'Ismeretlen'}\n` +
+    `**Valuta:** ${geo.currency || 'Ismeretlen'}\n` +
+    `**Valuta kód:** ${geo.currency_code || 'Ismeretlen'}\n` +
+    `**Valuta szimbólum:** ${geo.currency_symbol || 'Ismeretlen'}\n` +
+    `**Valuta árfolyam:** ${geo.currency_rates || 'Ismeretlen'}\n` +
+    `**Valuta többes:** ${geo.currency_plural || 'Ismeretlen'}\n`
+  );
+}
+
+// --- RIASZTÁS LOG (minden infóval, később törölhetsz) ---
+function formatGeoDataReport(geo) {
+  return (
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
+    `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
+    `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
+    `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
+    `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
+    `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
+    `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
+    `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
+    `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
+    `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
+    `**Régió:** ${geo.region || 'Ismeretlen'}\n` +
+    `**Város:** ${geo.city || 'Ismeretlen'}\n` +
+    `**Szélesség:** ${geo.latitude || 'Ismeretlen'}\n` +
+    `**Hosszúság:** ${geo.longitude || 'Ismeretlen'}\n` +
+    `**ASN:** ${geo.asn || 'Ismeretlen'}\n` +
+    `**Szervezet:** ${geo.org || 'Ismeretlen'}\n` +
+    `**Hálózat:** ${geo.isp || 'Ismeretlen'}\n` +
+    `**Időzóna:** ${geo.timezone || 'Ismeretlen'}\n` +
+    `**Időzóna neve:** ${geo.timezone_name || 'Ismeretlen'}\n` +
+    `**Időzóna nyári idő eltolás:** ${geo.timezone_dstOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT eltolás:** ${geo.timezone_gmtOffset || 'Ismeretlen'}\n` +
+    `**Időzóna GMT:** ${geo.timezone_gmt || 'Ismeretlen'}\n` +
+    `**Valuta:** ${geo.currency || 'Ismeretlen'}\n` +
+    `**Valuta kód:** ${geo.currency_code || 'Ismeretlen'}\n` +
+    `**Valuta szimbólum:** ${geo.currency_symbol || 'Ismeretlen'}\n` +
+    `**Valuta árfolyam:** ${geo.currency_rates || 'Ismeretlen'}\n` +
+    `**Valuta többes:** ${geo.currency_plural || 'Ismeretlen'}\n`
+  );
+}
+
+// ---- IP lekérés ----
+function getClientIp(req) {
+  if (req.headers['cf-connecting-ip']) {
+    return req.headers['cf-connecting-ip'];
+  }
+  if (req.headers['x-real-ip']) {
+    return req.headers['x-real-ip'];
+  }
+  if (req.headers['x-forwarded-for']) {
+    return req.headers['x-forwarded-for'].split(',')[0].trim();
+  }
+  return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
+}
+
+// ---- Geo adatok ----
+async function getGeo(ip) {
+  try {
+    const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
+    if (geo.data.success === false || geo.data.type === 'error') {
+      return {};
+    }
+    return geo.data;
+  } catch (e) {
+    console.log('ipwhois.app hiba:', e.message);
+    return {};
+  }
+}
+
+// ---- VPN/Proxy check ----
+async function isVpnProxy(ip) {
+  try {
+    const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
+    const res = await axios.get(url);
+    if (res.data && res.data[ip]) {
+      // proxy vagy VPN: "yes"
+      return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
+    }
+    return false;
+  } catch (e) {
+    console.log("proxycheck.io hiba:", e.message);
+    return false;
+  }
+}
+
 // --- MINDEN statikus fájl kiszolgálása a /public alól (mindenképp az első legyen!) ---
 app.use(express.static(path.join(__dirname, 'public')));
 
