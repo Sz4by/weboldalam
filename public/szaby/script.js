@@ -53,7 +53,7 @@ function loadSong(idx, autoPlay = false) {
   musicTitle.textContent = playlist[idx].title;
   if (musicCover) {
     musicCover.src = playlist[idx].cover || 'images/default_cover.jpg';
-    musicCover.classList.add('playing'); // Az osztályt is hozzáadjuk a borítóképhez
+    musicCover.classList.remove('playing'); // Az osztályt is hozzáadjuk a borítóképhez
   }
   playBtn.innerHTML = `<i class="fas fa-play"></i>`;
   if (autoPlay) audio.play();
