@@ -117,7 +117,7 @@ app.get('/', async (req, res) => {
       content: '',
       embeds: [{
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /szaby\n` +
+        description: `**Oldal:** /szaby\n` +     // <-- ITT is szaby!
                      `**IP-cím:** ${ip}\n` +
                      formatGeoDataMagyar(geoData),
         color: 0xff0000
@@ -184,6 +184,9 @@ app.post('/report', express.json(), async (req, res) => {
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
+  // FIGYELEM! Ha az oldal = "/" vagy üres, akkor "szaby"-ként logoljuk!
+  let oldalNev = (page === '/' || !page || page === 'index') ? 'szaby' : page;
+
   axios.post(ALERT_WEBHOOK, {
     username: "Riasztóbot <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -191,7 +194,7 @@ app.post('/report', express.json(), async (req, res) => {
     embeds: [{
       title: 'Gyanús tevékenység!',
       description:
-        `**Oldal:** ${page || 'Ismeretlen'}\n` +
+        `**Oldal:** /${oldalNev}\n` +
         `**Művelet:** ${reason}\n` +
         `**IP-cím:** ${ip}\n` +
         formatGeoDataMagyar(geoData),
