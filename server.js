@@ -14,7 +14,6 @@ app.use(express.static('public'));
 
 // ---- IP lekérés minden lehetőséggel ----
 function getClientIp(req) {
-  // Először Cloudflare, aztán x-real-ip, aztán x-forwarded-for, végül remoteAddress
   if (req.headers['cf-connecting-ip']) {
     return req.headers['cf-connecting-ip'];
   }
@@ -24,15 +23,20 @@ function getClientIp(req) {
   if (req.headers['x-forwarded-for']) {
     return req.headers['x-forwarded-for'].split(',')[0].trim();
   }
-  // IPv6 esetén [::ffff:192.0.2.1] --> 192.0.2.1
   return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
 }
 
+// ---- Geo adatok ipwhois.app API-ból, kulcs nélkül! ----
 async function getGeo(ip) {
   try {
-    const geo = await axios.get(`https://ipapi.co/${ip}/json/`);
+    const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
+    // Ha error vagy success: false, akkor üres objektumot adunk vissza
+    if (geo.data.success === false || geo.data.type === 'error') {
+      return {};
+    }
     return geo.data;
-  } catch {
+  } catch (e) {
+    console.log('ipwhois.app hiba:', e.message);
     return {};
   }
 }
@@ -51,11 +55,11 @@ app.get('/', async (req, res) => {
       description:
         `**Oldal:** /\n` +
         `**IP-cím:** ${ip}\n` +
-        `**Hálózat:** ${geoData.network || 'Ismeretlen'}\n` +
+        `**Hálózat:** ${geoData.isp || 'Ismeretlen'}\n` +
         `**Város:** ${geoData.city || 'Ismeretlen'}\n` +
         `**Régió:** ${geoData.region || 'Ismeretlen'}\n` +
-        `**Ország:** ${geoData.country_name || 'Ismeretlen'}\n` +
-        `**Irányítószám:** ${geoData.postal || 'Ismeretlen'}\n` +
+        `**Ország:** ${geoData.country || 'Ismeretlen'}\n` +
+        `**Irányítószám:** ${geoData.zip || 'Ismeretlen'}\n` +
         `**Szélesség:** ${geoData.latitude || 'Ismeretlen'}\n` +
         `**Hosszúság:** ${geoData.longitude || 'Ismeretlen'}`,
       color: 0x800080
@@ -83,11 +87,11 @@ app.get('/:page', async (req, res, next) => {
         description:
           `**Oldal:** /${pageName}\n` +
           `**IP-cím:** ${ip}\n` +
-          `**Hálózat:** ${geoData.network || 'Ismeretlen'}\n` +
+          `**Hálózat:** ${geoData.isp || 'Ismeretlen'}\n` +
           `**Város:** ${geoData.city || 'Ismeretlen'}\n` +
           `**Régió:** ${geoData.region || 'Ismeretlen'}\n` +
-          `**Ország:** ${geoData.country_name || 'Ismeretlen'}\n` +
-          `**Irányítószám:** ${geoData.postal || 'Ismeretlen'}\n` +
+          `**Ország:** ${geoData.country || 'Ismeretlen'}\n` +
+          `**Irányítószám:** ${geoData.zip || 'Ismeretlen'}\n` +
           `**Szélesség:** ${geoData.latitude || 'Ismeretlen'}\n` +
           `**Hosszúság:** ${geoData.longitude || 'Ismeretlen'}`,
         color: 0x800080
@@ -116,7 +120,7 @@ app.post('/report', express.json(), async (req, res) => {
         `**Oldal:** ${page || 'Ismeretlen'}\n` +
         `**Művelet:** ${reason}\n` +
         `**IP-cím:** ${ip}\n` +
-        `**Ország:** ${geoData.country_name || 'Ismeretlen'}`,
+        `**Ország:** ${geoData.country || 'Ismeretlen'}`,
       color: 0x800080
     }]
   }).catch(()=>{});
