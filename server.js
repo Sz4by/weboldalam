@@ -10,6 +10,8 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 
+app.use(express.static('public'));
+
 // ---- Magyarosított formázó minden fontos adattal ----
 function formatGeoDataMagyar(geo) {
   if (!geo || Object.keys(geo).length === 0) return '**Ismeretlen adatok**';
@@ -73,8 +75,39 @@ async function getGeo(ip) {
   }
 }
 
-// --- Főoldal (/) ---
-app.get('/', async (req, res) => {
+// --- Gyanús tevékenység reportolása ---
+app.post('/report', express.json(), async (req, res) => {
+  const ip = getClientIp(req);
+  const { reason, page } = req.body;
+  const geoData = await getGeo(ip);
+
+  axios.post(ALERT_WEBHOOK, {
+    username: "Helyszíni Naplózó <3",
+    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+    content: '',
+    embeds: [{
+      title: 'Gyanús tevékenység!',
+      description:
+        `**Oldal:** ${page || 'Ismeretlen'}\n` +
+        `**Művelet:** ${reason}\n` +
+        `**IP-cím:** ${ip}\n` +
+        formatGeoDataMagyar(geoData),
+      color: 0x800080
+    }]
+  }).catch(()=>{});
+
+  res.json({ ok: true });
+});
+
+// --- Statikus fájlok kiszolgálása (pl. képek, CSS, JS) ---
+app.use(express.static('public'));
+
+// --- Főoldal és minden egyéb dinamikus oldal logolása ---
+app.get(['/', '/:page'], async (req, res, next) => {
+  let pageName = req.path === '/' ? 'index' : req.params.page;
+  const filePath = path.join(__dirname, 'public', pageName + '.html');
+  if (!fs.existsSync(filePath)) return next();
+
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
@@ -90,79 +123,15 @@ app.get('/', async (req, res) => {
     embeds: [{
       title: 'Új látogató az oldalon!',
       description:
-        `**Oldal:** /\n` +
+        `**Oldal:** /${pageName === 'index' ? '' : pageName}\n` +
+        `**IP-cím:** ${ip}\n` +
         formatGeoDataMagyar(geoData),
       color: 0x800080
     }]
   }).catch(()=>{});
 
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+  res.sendFile(filePath);
 });
-
-// --- Kiterjesztés nélküli route-ok (/kecske, /kecske2, stb.) ---
-app.get('/:page', async (req, res, next) => {
-  const pageName = req.params.page;
-  if (pageName === 'report') return next();
-
-  const filePath = path.join(__dirname, 'public', pageName + '.html');
-  if (fs.existsSync(filePath)) {
-    const ip = getClientIp(req);
-    const geoData = await getGeo(ip);
-
-    // --- VPN/Proxy/TOR blokkolás ---
-    if (geoData.proxy || geoData.vpn || geoData.tor) {
-      return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-    }
-
-    axios.post(MAIN_WEBHOOK, {
-      username: "Helyszíni Naplózó <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      content: '',
-      embeds: [{
-        title: 'Új látogató az oldalon!',
-        description:
-          `**Oldal:** /${pageName}\n` +
-          formatGeoDataMagyar(geoData),
-        color: 0x800080
-      }]
-    }).catch(()=>{});
-
-    res.sendFile(filePath);
-  } else {
-    next();
-  }
-});
-
-// --- Gyanús tevékenység reportolása ---
-app.post('/report', express.json(), async (req, res) => {
-  const ip = getClientIp(req);
-  const { reason, page } = req.body;
-  const geoData = await getGeo(ip);
-
-  // --- VPN/Proxy/TOR blokkolás gyanús tevékenységnél is ---
-  if (geoData.proxy || geoData.vpn || geoData.tor) {
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott!');
-  }
-
-  axios.post(ALERT_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Gyanús tevékenység!',
-      description:
-        `**Oldal:** ${page || 'Ismeretlen'}\n` +
-        `**Művelet:** ${reason}\n` +
-        formatGeoDataMagyar(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  res.json({ ok: true });
-});
-
-// --- Statikus fájlok kiszolgálása (pl. képek, CSS, JS) ---
-app.use(express.static('public'));
 
 // --- 404 minden másra ---
 app.use((req, res) => {
