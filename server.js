@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 
+app.set('trust proxy', true); // ha proxy/CDN mögött futsz, ez kell a helyes protocol/IP-hez
+
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
@@ -85,9 +87,10 @@ function formatGeoDataVpn(geo) {
   );
 }
 
-// --- RIASZTÁS LOG (minden infóval) ---
-function formatGeoDataReport(geo) {
+// --- RIASZTÁS LOG (minden infóval + teljes URL támogatás) ---
+function formatGeoDataReport(geo, pageUrl) {
   return (
+    (pageUrl ? `**Oldal:** ${pageUrl}\n` : '') +
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
     `**Sikeres lekérdezés:** ${geo.success || 'Ismeretlen'}\n` +
     `**Típus:** ${geo.type || 'Ismeretlen'}\n` +
@@ -121,15 +124,9 @@ function formatGeoDataReport(geo) {
 
 // ---- IP lekérés ----
 function getClientIp(req) {
-  if (req.headers['cf-connecting-ip']) {
-    return req.headers['cf-connecting-ip'];
-  }
-  if (req.headers['x-real-ip']) {
-    return req.headers['x-real-ip'];
-  }
-  if (req.headers['x-forwarded-for']) {
-    return req.headers['x-forwarded-for'].split(',')[0].trim();
-  }
+  if (req.headers['cf-connecting-ip']) return req.headers['cf-connecting-ip'];
+  if (req.headers['x-real-ip']) return req.headers['x-real-ip'];
+  if (req.headers['x-forwarded-for']) return req.headers['x-forwarded-for'].split(',')[0].trim();
   return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
 }
 
@@ -137,9 +134,7 @@ function getClientIp(req) {
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
-    if (geo.data.success === false || geo.data.type === 'error') {
-      return {};
-    }
+    if (geo.data.success === false || geo.data.type === 'error') return {};
     return geo.data;
   } catch (e) {
     console.log('ipwhois.app hiba:', e.message);
@@ -163,44 +158,51 @@ async function isVpnProxy(ip) {
 }
 
 /* =========================
-   HTML LOGOLÓ MIDDLEWARE
-   (express.static ELÉ!)
+   KÖZPONTI HTML LOGOLÓ + VPN SZŰRŐ
+   (MINDIG express.static ELÉ!)
    ========================= */
 app.use(async (req, res, next) => {
-  // Csak közvetlen HTML fájlkérésekre (pl. /kecske/index.html)
-  if (req.path.toLowerCase().endsWith('.html')) {
-    const ip = getClientIp(req);
+  const publicDir = path.join(__dirname, 'public');
+  const reqPath = decodeURIComponent(req.path);
+  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  let servesHtml = false;
 
-    // Saját IP-k: sem fő, sem alert webhook
-    const isMyIp = MY_IPS.includes(ip);
-
-    // Debug
-    if (!isMyIp) {
-      console.log("HTML kérés IP:", ip);
-      console.log("Whitelistben van?:", WHITELISTED_IPS.includes(ip) ? "Igen" : "Nem");
-    } else {
-      console.log("Saját IP-ről HTML kérés – webhookok kihagyva.");
+  // 1) közvetlen .html fájl
+  if (reqPath.toLowerCase().endsWith('.html')) {
+    if (fs.existsSync(path.join(publicDir, reqPath))) {
+      servesHtml = true;
     }
+  } else {
+    // 2) mappa -> index.html
+    if (fs.existsSync(path.join(publicDir, reqPath, 'index.html'))) {
+      servesHtml = true;
+    }
+  }
 
-    const vpnCheck = await isVpnProxy(ip);
+  if (servesHtml) {
+    const ip = getClientIp(req);
+    const isMyIp = MY_IPS.includes(ip);
     const whitelisted = WHITELISTED_IPS.includes(ip);
+    const vpnCheck = await isVpnProxy(ip);
     const geoData = await getGeo(ip);
 
-    // Fő log (ha nem saját IP)
+    // Fő log
     if (!isMyIp) {
       axios.post(MAIN_WEBHOOK, {
         username: "Helyszíni Naplózó <3",
         avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
         content: '',
         embeds: [{
-          title: 'Új látogató az oldalon! (HTML közvetlen)',
-          description: `**Oldal:** ${req.path}\n` + formatGeoDataTeljes(geoData),
+          title: 'Új látogató az oldalon! (HTML)',
+          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
           color: 0x800080
         }]
       }).catch(()=>{});
+    } else {
+      console.log("Saját IP – fő webhook kihagyva.");
     }
 
-    // VPN/proxy tiltás (kivéve whitelistelt IP-ket, és saját IP-t)
+    // VPN/proxy tiltás (whitelist kivétel)
     if (vpnCheck && !whitelisted) {
       if (!isMyIp) {
         axios.post(ALERT_WEBHOOK, {
@@ -208,8 +210,8 @@ app.use(async (req, res, next) => {
           avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
           content: '',
           embeds: [{
-            title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML közvetlen)',
-            description: `**Oldal:** ${req.path}\n` + formatGeoDataVpn(geoData),
+            title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML)',
+            description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
             color: 0xff0000
           }]
         }).catch(()=>{});
@@ -225,110 +227,25 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// --- MINDEN statikus fájl kiszolgálása a /public alól (mindig EZ UTÁN legyen!) ---
+// --- Statikus fájlok kiszolgálása a /public alól ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- FŐOLDAL: mindig a szaby/index.html-t adja vissza, de a link a főoldal marad! ---
-app.get('/', async (req, res) => {
-  const folderName = 'szaby';
-  const ip = getClientIp(req);
-
-  // --- DEBUG LOG ---
-  if (!MY_IPS.includes(ip)) {
-    console.log("Bejövő IP:", ip);
-  } else {
-    console.log("Saját IP-ről érkezett, részletes log/Discord kihagyva.");
-  }
-  const vpnCheck = await isVpnProxy(ip);
-  if (!MY_IPS.includes(ip)) {
-    console.log("VPN/proxy ellenőrzés eredménye:", vpnCheck ? "VPN/Proxy" : "Nem VPN/Proxy");
-    console.log("Whitelistben van?:", WHITELISTED_IPS.includes(ip) ? "Igen" : "Nem");
-    console.log("Whitelist tartalma:", WHITELISTED_IPS);
-  }
-
-  const geoData = await getGeo(ip);
-
-  // --- FŐ WEBHOOK LOG (teljes) --- CSAK ha nem a saját IP
-  if (!MY_IPS.includes(ip)) {
-    axios.post(MAIN_WEBHOOK, {
-      username: "Helyszíni Naplózó <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      content: '',
-      embeds: [{
-        title: 'Új látogató az oldalon!',
-        description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
-        color: 0x800080
-      }]
-    }).catch(()=>{});
-  } else {
-    console.log("Saját IP – fő webhook kihagyva.");
-  }
-
-  // --- VPN/Proxy szűrés, de kivételezve a whitelistben szereplő IP-ket ---
-  if (!WHITELISTED_IPS.includes(ip) && vpnCheck) {
-    if (!MY_IPS.includes(ip)) {
-      axios.post(ALERT_WEBHOOK, {
-        username: "VPN figyelő <3",
-        avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-        content: '',
-        embeds: [{
-          title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-          description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
-          color: 0xff0000
-        }]
-      }).catch(()=>{});
-    } else {
-      console.log("Saját IP – alert webhook kihagyva.");
-    }
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
-  if (WHITELISTED_IPS.includes(ip)) {
-    console.log(`✅ Engedélyezett VPN/proxy IP belépett: ${ip}`);
-  }
-
+// --- FŐOLDAL: / -> public/szaby/index.html (logot a middleware intézi) ---
+app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
-  res.sendFile(filePath);
+  return fs.existsSync(filePath)
+    ? res.sendFile(filePath)
+    : res.status(404).send('Főoldal nem található');
 });
 
-// --- Dinamikus oldalak: pl. /szaby, /kecske, /barmi ---
-app.get('/:folder', async (req, res, next) => {
+// --- Dinamikus oldalak: /:folder -> public/:folder/index.html (logot a middleware intézi) ---
+app.get('/:folder', (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
 
-  const dirPath = path.join(__dirname, 'public', folderName);
-  const filePath = path.join(dirPath, 'index.html');
+  const filePath = path.join(__dirname, 'public', folderName, 'index.html');
   if (!fs.existsSync(filePath)) return next();
-
-  const ip = getClientIp(req);
-  const geoData = await getGeo(ip);
-
-  axios.post(MAIN_WEBHOOK, {
-    username: "Helyszíni Naplózó <3",
-    avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-    content: '',
-    embeds: [{
-      title: 'Új látogató az oldalon!',
-      description: `**Oldal:** /${folderName}\n` + formatGeoDataTeljes(geoData),
-      color: 0x800080
-    }]
-  }).catch(()=>{});
-
-  if (await isVpnProxy(ip)) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN figyelő <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      content: '',
-      embeds: [{
-        title: 'VPN/proxy vagy TOR-ral próbálkozás!',
-        description: `**Oldal:** /${folderName}\n` + formatGeoDataVpn(geoData),
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-  }
-
-  res.sendFile(filePath);
+  return res.sendFile(filePath);
 });
 
 // --- Gyanús tevékenység reportolása ---
@@ -336,6 +253,10 @@ app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
+
+  // Teljes URL vagy referer fallback
+  const ownUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const fromUrl = page || req.get('referer') || ownUrl;
 
   if (!MY_IPS.includes(ip)) {
     axios.post(ALERT_WEBHOOK, {
@@ -345,9 +266,8 @@ app.post('/report', express.json(), async (req, res) => {
       embeds: [{
         title: 'Gyanús tevékenység!',
         description:
-          `**Oldal:** ${page || 'Ismeretlen'}\n` +
-          `**Művelet:** ${reason}\n` +
-          formatGeoDataReport(geoData),
+          `**Művelet:** ${reason || 'Ismeretlen'}\n` +
+          formatGeoDataReport(geoData, fromUrl),
         color: 0xff0000
       }]
     }).catch(()=>{});
@@ -366,5 +286,3 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Szerver elindult: http://localhost:${PORT}`);
 });
-
-// --- Utility függvények maradnak lent... ---
