@@ -51,7 +51,7 @@ function formatGeoDataTeljes(geo) {
   );
 }
 
-// --- VPN/PROXY LOG (minden infóval, ha akarsz törölsz belőle) ---
+// --- VPN/PROXY LOG (minden infóval) ---
 function formatGeoDataVpn(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -85,7 +85,7 @@ function formatGeoDataVpn(geo) {
   );
 }
 
-// --- RIASZTÁS LOG (minden infóval, később törölhetsz) ---
+// --- RIASZTÁS LOG (minden infóval) ---
 function formatGeoDataReport(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -153,7 +153,6 @@ async function isVpnProxy(ip) {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
     const res = await axios.get(url);
     if (res.data && res.data[ip]) {
-      // proxy vagy VPN: "yes"
       return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
     }
     return false;
@@ -163,7 +162,70 @@ async function isVpnProxy(ip) {
   }
 }
 
-// --- MINDEN statikus fájl kiszolgálása a /public alól (mindenképp az első legyen!) ---
+/* =========================
+   HTML LOGOLÓ MIDDLEWARE
+   (express.static ELÉ!)
+   ========================= */
+app.use(async (req, res, next) => {
+  // Csak közvetlen HTML fájlkérésekre (pl. /kecske/index.html)
+  if (req.path.toLowerCase().endsWith('.html')) {
+    const ip = getClientIp(req);
+
+    // Saját IP-k: sem fő, sem alert webhook
+    const isMyIp = MY_IPS.includes(ip);
+
+    // Debug
+    if (!isMyIp) {
+      console.log("HTML kérés IP:", ip);
+      console.log("Whitelistben van?:", WHITELISTED_IPS.includes(ip) ? "Igen" : "Nem");
+    } else {
+      console.log("Saját IP-ről HTML kérés – webhookok kihagyva.");
+    }
+
+    const vpnCheck = await isVpnProxy(ip);
+    const whitelisted = WHITELISTED_IPS.includes(ip);
+    const geoData = await getGeo(ip);
+
+    // Fő log (ha nem saját IP)
+    if (!isMyIp) {
+      axios.post(MAIN_WEBHOOK, {
+        username: "Helyszíni Naplózó <3",
+        avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+        content: '',
+        embeds: [{
+          title: 'Új látogató az oldalon! (HTML közvetlen)',
+          description: `**Oldal:** ${req.path}\n` + formatGeoDataTeljes(geoData),
+          color: 0x800080
+        }]
+      }).catch(()=>{});
+    }
+
+    // VPN/proxy tiltás (kivéve whitelistelt IP-ket, és saját IP-t)
+    if (vpnCheck && !whitelisted) {
+      if (!isMyIp) {
+        axios.post(ALERT_WEBHOOK, {
+          username: "VPN figyelő <3",
+          avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+          content: '',
+          embeds: [{
+            title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML közvetlen)',
+            description: `**Oldal:** ${req.path}\n` + formatGeoDataVpn(geoData),
+            color: 0xff0000
+          }]
+        }).catch(()=>{});
+      }
+      return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+    }
+
+    if (whitelisted) {
+      console.log(`✅ Engedélyezett VPN/proxy IP (HTML): ${ip}`);
+    }
+  }
+
+  next();
+});
+
+// --- MINDEN statikus fájl kiszolgálása a /public alól (mindig EZ UTÁN legyen!) ---
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- FŐOLDAL: mindig a szaby/index.html-t adja vissza, de a link a főoldal marad! ---
@@ -204,7 +266,6 @@ app.get('/', async (req, res) => {
 
   // --- VPN/Proxy szűrés, de kivételezve a whitelistben szereplő IP-ket ---
   if (!WHITELISTED_IPS.includes(ip) && vpnCheck) {
-    // ALERT webhook CSAK ha nem a saját IP
     if (!MY_IPS.includes(ip)) {
       axios.post(ALERT_WEBHOOK, {
         username: "VPN figyelő <3",
@@ -222,12 +283,10 @@ app.get('/', async (req, res) => {
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
   }
 
-  // --- Logoljuk, ha whitelistelt VPN/proxy IP jött ---
   if (WHITELISTED_IPS.includes(ip)) {
     console.log(`✅ Engedélyezett VPN/proxy IP belépett: ${ip}`);
   }
 
-  // Visszaadja a szaby/index.html-t (de URL: '/')
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   res.sendFile(filePath);
 });
@@ -278,7 +337,6 @@ app.post('/report', express.json(), async (req, res) => {
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
-  // >>> SAJÁT IP-K ESETÉN NE KÜLDJÜNK DISCORD ALERTET <<<
   if (!MY_IPS.includes(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "Riasztóbot <3",
