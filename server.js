@@ -158,70 +158,71 @@ async function isVpnProxy(ip) {
 }
 
 /* =========================
-   KÖZPONTI HTML LOGOLÓ + VPN SZŰRŐ
+   KÖZPONTI HTML LOGOLÓ + VPN SZŰRŐ (javítva)
    (MINDIG express.static ELÉ!)
    ========================= */
 app.use(async (req, res, next) => {
   const publicDir = path.join(__dirname, 'public');
-  const reqPath = decodeURIComponent(req.path);
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, ''); // fontos: ne kezdődjön "/"
+
   let servesHtml = false;
 
-  // 1) közvetlen .html fájl
-  if (reqPath.toLowerCase().endsWith('.html')) {
-    if (fs.existsSync(path.join(publicDir, reqPath))) {
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    if (req.path === '/') {
+      // nálad a főoldal is HTML (később a / route a szaby/index.html-t adja)
       servesHtml = true;
-    }
-  } else {
-    // 2) mappa -> index.html
-    if (fs.existsSync(path.join(publicDir, reqPath, 'index.html'))) {
-      servesHtml = true;
+    } else if (cleanPath.toLowerCase().endsWith('.html')) {
+      // közvetlen .html
+      servesHtml = fs.existsSync(path.join(publicDir, cleanPath));
+    } else if (!path.extname(cleanPath)) {
+      // nincs kiterjesztés -> mappa? index.html?
+      servesHtml = fs.existsSync(path.join(publicDir, cleanPath, 'index.html'));
     }
   }
 
-  if (servesHtml) {
-    const ip = getClientIp(req);
-    const isMyIp = MY_IPS.includes(ip);
-    const whitelisted = WHITELISTED_IPS.includes(ip);
-    const vpnCheck = await isVpnProxy(ip);
-    const geoData = await getGeo(ip);
+  if (!servesHtml) return next();
 
-    // Fő log
+  // --- Log + VPN check ---
+  const ip = getClientIp(req);
+  const isMyIp = MY_IPS.includes(ip);
+  const whitelisted = WHITELISTED_IPS.includes(ip);
+  const vpnCheck = await isVpnProxy(ip);
+  const geoData = await getGeo(ip);
+
+  if (!isMyIp) {
+    axios.post(MAIN_WEBHOOK, {
+      username: "Helyszíni Naplózó <3",
+      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+      content: '',
+      embeds: [{
+        title: 'Új látogató az oldalon! (HTML)',
+        description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
+        color: 0x800080
+      }]
+    }).catch(()=>{});
+  } else {
+    console.log("Saját IP – fő webhook kihagyva.");
+  }
+
+  if (vpnCheck && !whitelisted) {
     if (!isMyIp) {
-      axios.post(MAIN_WEBHOOK, {
-        username: "Helyszíni Naplózó <3",
+      axios.post(ALERT_WEBHOOK, {
+        username: "VPN figyelő <3",
         avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
         content: '',
         embeds: [{
-          title: 'Új látogató az oldalon! (HTML)',
-          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
-          color: 0x800080
+          title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML)',
+          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
+          color: 0xff0000
         }]
       }).catch(()=>{});
-    } else {
-      console.log("Saját IP – fő webhook kihagyva.");
     }
+    return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
+  }
 
-    // VPN/proxy tiltás (whitelist kivétel)
-    if (vpnCheck && !whitelisted) {
-      if (!isMyIp) {
-        axios.post(ALERT_WEBHOOK, {
-          username: "VPN figyelő <3",
-          avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-          content: '',
-          embeds: [{
-            title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML)',
-            description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
-            color: 0xff0000
-          }]
-        }).catch(()=>{});
-      }
-      return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
-    }
-
-    if (whitelisted) {
-      console.log(`✅ Engedélyezett VPN/proxy IP (HTML): ${ip}`);
-    }
+  if (whitelisted) {
+    console.log(`✅ Engedélyezett VPN/proxy IP (HTML): ${ip}`);
   }
 
   next();
