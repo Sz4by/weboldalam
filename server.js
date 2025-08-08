@@ -213,7 +213,7 @@ async function isVpnProxy(ip) {
 }
 
 /* =========================
-   GLOBÁLIS BAN-MIDDLEWARE (legfelül fusson)
+   GLOBÁLIS IP BAN CHECK (legfelül fusson)
    ========================= */
 app.use((req, res, next) => {
   const ip = getClientIp(req);
@@ -221,6 +221,10 @@ app.use((req, res, next) => {
   const whitelisted = WHITELISTED_IPS.includes(ip);
 
   if (!isMyIp && !whitelisted && isIpBanned(ip)) {
+    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
+    if (fs.existsSync(bannedPage)) {
+      return res.status(403).sendFile(bannedPage);
+    }
     const leftHrs = Math.ceil(remainingBanMs(ip) / (60 * 60 * 1000));
     return res.status(403).send(`Az IP címed ideiglenesen tiltva van (~${leftHrs} óra). 🚫`);
   }
@@ -270,7 +274,7 @@ app.use(async (req, res, next) => {
     }).catch(()=>{});
   }
 
-  // VPN/proxy tiltás (whitelist kivétel)
+  // --- VPN/proxy tiltás (kivéve whitelistelt IP-ket, és saját IP-t) ---
   const vpnCheck = await isVpnProxy(ip);
   if (vpnCheck && !whitelisted) {
     if (!isMyIp) {
@@ -279,11 +283,17 @@ app.use(async (req, res, next) => {
         avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
         content: '',
         embeds: [{
-          title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML)',
+          title: 'VPN/proxy vagy TOR-ral próbálkozás! (HTML közvetlen)',
           description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
           color: 0xff0000
         }]
       }).catch(()=>{});
+    }
+
+    // Ha van külön HTML oldal a tiltáshoz, azt adjuk vissza
+    const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
+    if (fs.existsSync(bannedVpnPage)) {
+      return res.status(403).sendFile(bannedVpnPage);
     }
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott ezen az oldalon! 🚫');
   }
@@ -331,11 +341,25 @@ app.post('/report', express.json(), async (req, res) => {
 
   // már tiltott?
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
-    return res.status(403).json({ ok: false, banned: true, retryAfterMs: remainingBanMs(ip) });
+    // Ha tiltott, mutassuk ugyanazt az oldalt mint globálisan
+    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
+    if (fs.existsSync(bannedPage)) {
+      res.status(403).sendFile(bannedPage);
+    } else {
+      const leftHrs = Math.ceil(remainingBanMs(ip) / (60 * 60 * 1000));
+      res.status(403).send(`Az IP címed ideiglenesen tiltva van (~${leftHrs} óra). 🚫`);
+    }
+    return;
   }
 
+  // "rossz kombináció" felismerés (ékezet/szóköz érzéketlen)
+  const rawReason = (reason ?? '').toString();
+  const reasonText = rawReason
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '') // ékezetek le
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+  const isBadCombo = reasonText.includes('rossz kombinacio');
+
   // "rossz kombináció" számlálás és tiltás
-  const isBadCombo = typeof reason === 'string' && reason.toLowerCase().includes('rossz kombináció');
   if (isBadCombo && !MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
     const count = registerFailedCombo(ip);
 
@@ -353,21 +377,14 @@ app.post('/report', express.json(), async (req, res) => {
         }]
       }).catch(()=>{});
 
-      return res.status(429).json({ ok: false, banned: true, banMs: BAN_DURATION_MS });
+      // Tiltás esetén is adjunk vissza HTML-t, ha van
+      const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
+      if (fs.existsSync(bannedPage)) {
+        return res.status(429).sendFile(bannedPage);
+      }
+      return res.status(429).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
     } else {
       const left = MAX_FAILS - count;
-      if (left <= 2) {
-        axios.post(ALERT_WEBHOOK, {
-          username: "Riasztóbot <3>",
-          avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-          content: '',
-          embeds: [{
-            title: 'Közel a tiltáshoz',
-            description: `**Oldal:** ${fromUrl}\n**IP:** ${ip}\n**Hibák száma:** ${count}/${MAX_FAILS}`,
-            color: 0xFFA500
-          }]
-        }).catch(()=>{});
-      }
       return res.json({ ok: true, fails: count, remainingUntilBan: left });
     }
   }
