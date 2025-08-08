@@ -53,7 +53,7 @@ function isIpBanned(ip) {
   return true;
 }
 function banIp(ip) { bannedIPs.set(ip, Date.now() + BAN_DURATION_MS); }
-function unbanIp(ip) { bannedIPs.delete(ip); } // <<< EGY IP FELOLDÁSA
+function unbanIp(ip) { bannedIPs.delete(ip); } // egy IP feloldása
 function remainingBanMs(ip) {
   const until = bannedIPs.get(ip);
   return until ? Math.max(0, until - Date.now()) : 0;
@@ -416,8 +416,13 @@ app.post('/admin/unban', express.json(), (req, res) => {
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body || {};
-  const geoData = await getGeo(ip);
 
+  // SAJÁT IP: ne logolja rossz kombinációnak és ne tiltsa
+  if (MY_IPS.includes(ip)) {
+    return res.json({ ok: true, ignored: true });
+  }
+
+  const geoData = await getGeo(ip);
   const count = recordBadAttempt(ip);
 
   // Discord log
@@ -430,7 +435,7 @@ app.post('/report', express.json(), async (req, res) => {
     }]
   }).catch(() => {});
 
-  if (count >= MAX_BAD_ATTEMPTS && !MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+  if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
     banIp(ip);
     const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
     return fs.existsSync(bannedPage)
