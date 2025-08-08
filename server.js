@@ -4,30 +4,55 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
-const app = express();
 
-app.set('trust proxy', true); // ha proxy/CDN mögött futsz, ez kell a helyes protocol/IP-hez
+const app = express();
+app.set('trust proxy', true); // proxy/CDN mögött kell a helyes IP/protocol-hoz
 
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
-// --- VPN/proxy kivételek (whitelist) ---
-const WHITELISTED_IPS = process.env.ALLOWED_VPN_IPS ? process.env.ALLOWED_VPN_IPS.split(',').map(ip => ip.trim()) : [];
+/* =========================
+   IP normalizálás + IP lekérés
+   ========================= */
+function normalizeIp(ip) {
+  if (!ip) return '';
+  if (ip.startsWith('::ffff:')) ip = ip.slice(7); // IPv6-mapped IPv4 -> IPv4
+  if (ip === '::1') ip = '127.0.0.1';            // IPv6 localhost -> IPv4
+  return ip.toLowerCase();
+}
+function getClientIp(req) {
+  let ip =
+    req.headers['cf-connecting-ip'] ||
+    req.headers['x-real-ip'] ||
+    (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : '') ||
+    (req.socket.remoteAddress || req.connection.remoteAddress || '');
+  return normalizeIp(ip);
+}
 
-// --- Saját IP-k, amiknél NEM küldünk Discord webhookot ---
-const MY_IPS = process.env.MY_IP ? process.env.MY_IP.split(',').map(ip => ip.trim()) : [];
+/* =========================
+   IP listák (whitelist/saját) normalizálva
+   ========================= */
+const WHITELISTED_IPS = (process.env.ALLOWED_VPN_IPS || '')
+  .split(',')
+  .map(s => normalizeIp(s.trim()))
+  .filter(Boolean);
+
+const MY_IPS = (process.env.MY_IP || '')
+  .split(',')
+  .map(s => normalizeIp(s.trim()))
+  .filter(Boolean);
 
 /* =======================================
    Rossz kombináció számláló és IP tiltás
    ======================================= */
 const failedCombos = new Map(); // ip -> { count, firstAt }
-const bannedIPs = new Map();    // ip -> expiresAt (ms)
+const bannedIPs   = new Map();  // ip -> expiresAt (ms)
 
-const MAX_FAILS = 10;                          // ennyi "rossz kombináció" után tiltunk
-const FAIL_WINDOW_MS = 24 * 60 * 60 * 1000;    // 24 óra ablak
-const BAN_DURATION_MS = 24 * 60 * 60 * 1000;   // 24 óra tiltás
+const MAX_FAILS       = 10;                       // ennyi "rossz kombináció" után tiltunk
+const FAIL_WINDOW_MS  = 24 * 60 * 60 * 1000;      // 24 óra ablak
+const BAN_DURATION_MS = 24 * 60 * 60 * 1000;      // 24 óra tiltás
 
 function isIpBanned(ip) {
   const until = bannedIPs.get(ip);
@@ -55,7 +80,9 @@ setInterval(() => {
   for (const [ip, rec] of failedCombos.entries()) if (now - rec.firstAt > FAIL_WINDOW_MS) failedCombos.delete(ip);
 }, 60 * 60 * 1000);
 
-// --- TELJES LOG (fő log, minden infóval) ---
+/* =========================
+   Discord üzenetekhez geo formázók
+   ========================= */
 function formatGeoDataTeljes(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -89,7 +116,7 @@ function formatGeoDataTeljes(geo) {
   );
 }
 
-// --- VPN/PROXY LOG (minden infóval) ---
+// --- VPN/PROXY LOG (MINDEN infóval – a te részletes verziód) ---
 function formatGeoDataVpn(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -123,7 +150,7 @@ function formatGeoDataVpn(geo) {
   );
 }
 
-// --- RIASZTÁS LOG (minden infóval + teljes URL támogatás) ---
+// --- RIASZTÁS LOG (minden infóval + teljes URL támogatás – a te részletes verziód) ---
 function formatGeoDataReport(geo, pageUrl) {
   return (
     (pageUrl ? `**Oldal:** ${pageUrl}\n` : '') +
@@ -158,15 +185,9 @@ function formatGeoDataReport(geo, pageUrl) {
   );
 }
 
-// ---- IP lekérés ----
-function getClientIp(req) {
-  if (req.headers['cf-connecting-ip']) return req.headers['cf-connecting-ip'];
-  if (req.headers['x-real-ip']) return req.headers['x-real-ip'];
-  if (req.headers['x-forwarded-for']) return req.headers['x-forwarded-for'].split(',')[0].trim();
-  return (req.socket.remoteAddress || req.connection.remoteAddress || '').replace(/^.*:/, '');
-}
-
-// ---- Geo adatok ----
+/* =========================
+   Geo lekérés + VPN ellenőrzés
+   ========================= */
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
@@ -177,8 +198,6 @@ async function getGeo(ip) {
     return {};
   }
 }
-
-// ---- VPN/Proxy check ----
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
@@ -194,13 +213,28 @@ async function isVpnProxy(ip) {
 }
 
 /* =========================
-   KÖZPONTI HTML LOGOLÓ + VPN + BAN
+   GLOBÁLIS BAN-MIDDLEWARE (legfelül fusson)
+   ========================= */
+app.use((req, res, next) => {
+  const ip = getClientIp(req);
+  const isMyIp = MY_IPS.includes(ip);
+  const whitelisted = WHITELISTED_IPS.includes(ip);
+
+  if (!isMyIp && !whitelisted && isIpBanned(ip)) {
+    const leftHrs = Math.ceil(remainingBanMs(ip) / (60 * 60 * 1000));
+    return res.status(403).send(`Az IP címed ideiglenesen tiltva van (~${leftHrs} óra). 🚫`);
+  }
+  next();
+});
+
+/* =========================
+   KÖZPONTI HTML LOGOLÓ + VPN SZŰRŐ
    (MINDIG express.static ELÉ!)
    ========================= */
 app.use(async (req, res, next) => {
   const publicDir = path.join(__dirname, 'public');
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, ''); // fontos: ne kezdődjön "/"
+  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, '');
 
   let servesHtml = false;
 
@@ -209,37 +243,19 @@ app.use(async (req, res, next) => {
       // nálad a főoldal is HTML (később a / route a szaby/index.html-t adja)
       servesHtml = true;
     } else if (cleanPath.toLowerCase().endsWith('.html')) {
-      // közvetlen .html
       servesHtml = fs.existsSync(path.join(publicDir, cleanPath));
     } else if (!path.extname(cleanPath)) {
-      // nincs kiterjesztés -> mappa? index.html?
       servesHtml = fs.existsSync(path.join(publicDir, cleanPath, 'index.html'));
     }
   }
 
   if (!servesHtml) return next();
 
-  // --- IP és kivételek ---
   const ip = getClientIp(req);
   const isMyIp = MY_IPS.includes(ip);
   const whitelisted = WHITELISTED_IPS.includes(ip);
 
-  // ⛔ IP ban check (HTML kérésekre)
-  if (!isMyIp && !whitelisted && isIpBanned(ip)) {
-    const leftHrs = Math.ceil(remainingBanMs(ip) / (60 * 60 * 1000));
-    axios.post(ALERT_WEBHOOK, {
-      username: "Tiltás <3",
-      avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
-      embeds: [{
-        title: 'Tiltott IP próbálkozás (aktív 24h ban)',
-        description: `**Oldal:** ${fullUrl}\n**IP:** ${ip}\n**Hátralévő tiltás:** ~${leftHrs} óra`,
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-    return res.status(403).send('Az IP címed ideiglenesen tiltva van. Próbáld meg később. 🚫');
-  }
-
-  // --- Geo + fő log ---
+  // Fő log
   const geoData = await getGeo(ip);
   if (!isMyIp) {
     axios.post(MAIN_WEBHOOK, {
@@ -252,11 +268,9 @@ app.use(async (req, res, next) => {
         color: 0x800080
       }]
     }).catch(()=>{});
-  } else {
-    console.log("Saját IP – fő webhook kihagyva.");
   }
 
-  // --- VPN/proxy tiltás (whitelist kivétel) ---
+  // VPN/proxy tiltás (whitelist kivétel)
   const vpnCheck = await isVpnProxy(ip);
   if (vpnCheck && !whitelisted) {
     if (!isMyIp) {
@@ -279,10 +293,15 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// --- Statikus fájlok kiszolgálása a /public alól ---
+/* =========================
+   Statikus fájlok kiszolgálása
+   ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- FŐOLDAL: / -> public/szaby/index.html (logot a middleware intézi) ---
+/* =========================
+   Route-ok
+   ========================= */
+// Főoldal: / -> public/szaby/index.html
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath)
@@ -290,7 +309,7 @@ app.get('/', (req, res) => {
     : res.status(404).send('Főoldal nem található');
 });
 
-// --- Dinamikus oldalak: /:folder -> public/:folder/index.html (logot a middleware intézi) ---
+// Dinamikus mappák: /:folder -> public/:folder/index.html
 app.get('/:folder', (req, res, next) => {
   const folderName = req.params.folder;
   if (folderName === 'report') return next();
@@ -300,27 +319,29 @@ app.get('/:folder', (req, res, next) => {
   return res.sendFile(filePath);
 });
 
-// --- Gyanús tevékenység reportolása ---
+// Gyanús tevékenység reportolása
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body;
   const geoData = await getGeo(ip);
 
-  // Teljes URL vagy referer fallback (a forrás oldal, nem a /report)
+  // Forrás URL (page -> Referer -> saját URL)
   const ownUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
   const fromUrl = page || req.get('referer') || ownUrl;
 
-  // ha már tiltott és nem saját/whitelist, azonnal 403
+  // már tiltott?
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
     return res.status(403).json({ ok: false, banned: true, retryAfterMs: remainingBanMs(ip) });
   }
 
-  // "rossz kombináció" számlálása és tiltás
+  // "rossz kombináció" számlálás és tiltás
   const isBadCombo = typeof reason === 'string' && reason.toLowerCase().includes('rossz kombináció');
   if (isBadCombo && !MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
     const count = registerFailedCombo(ip);
+
     if (count >= MAX_FAILS) {
       banIp(ip);
+
       axios.post(ALERT_WEBHOOK, {
         username: "Riasztóbot <3",
         avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
@@ -331,14 +352,15 @@ app.post('/report', express.json(), async (req, res) => {
           color: 0xff0000
         }]
       }).catch(()=>{});
+
       return res.status(429).json({ ok: false, banned: true, banMs: BAN_DURATION_MS });
     } else {
-      // opcionális: közel a tiltáshoz értesítés
       const left = MAX_FAILS - count;
       if (left <= 2) {
         axios.post(ALERT_WEBHOOK, {
-          username: "Riasztóbot <3",
+          username: "Riasztóbot <3>",
           avatar_url: "https://i.pinimg.com/736x/bc/56/a6/bc56a648f77fdd64ae5702a8943d36ae.jpg",
+          content: '',
           embeds: [{
             title: 'Közel a tiltáshoz',
             description: `**Oldal:** ${fromUrl}\n**IP:** ${ip}\n**Hibák száma:** ${count}/${MAX_FAILS}`,
@@ -350,7 +372,7 @@ app.post('/report', express.json(), async (req, res) => {
     }
   }
 
-  // Általános riasztás (nem "rossz kombináció")
+  // Általános riasztás (egyéb ok)
   if (!MY_IPS.includes(ip)) {
     axios.post(ALERT_WEBHOOK, {
       username: "Riasztóbot <3",
@@ -369,7 +391,7 @@ app.post('/report', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
 
-// --- 404 minden másra ---
+// 404 minden másra
 app.use((req, res) => {
   res.status(404).send('404 Not Found');
 });
