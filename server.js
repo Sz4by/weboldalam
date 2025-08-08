@@ -6,14 +6,16 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', true); // ha proxy/CDN mögött futsz
 
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 
-// ================== IP normalizálás + lekérés ==================
+/* =========================
+   IP normalizálás + IP lekérés
+   ========================= */
 function normalizeIp(ip) {
   if (!ip) return '';
   if (ip.startsWith('::ffff:')) ip = ip.slice(7);
@@ -29,12 +31,18 @@ function getClientIp(req) {
   return normalizeIp(ip);
 }
 
-// ================== Whitelist és saját IP-k ==================
-const WHITELISTED_IPS = (process.env.ALLOWED_VPN_IPS || '').split(',').map(s => normalizeIp(s.trim())).filter(Boolean);
-const MY_IPS = (process.env.MY_IP || '').split(',').map(s => normalizeIp(s.trim())).filter(Boolean);
+/* =========================
+   IP listák (whitelist/saját)
+   ========================= */
+const WHITELISTED_IPS = (process.env.ALLOWED_VPN_IPS || '')
+  .split(',').map(s => normalizeIp(s.trim())).filter(Boolean);
+const MY_IPS = (process.env.MY_IP || '')
+  .split(',').map(s => normalizeIp(s.trim())).filter(Boolean);
 
-// ================== IP tiltások memóriában (24 óra) ==================
-const bannedIPs = new Map();
+/* =========================
+   24 órás IP tiltás (memóriában)
+   ========================= */
+const bannedIPs = new Map(); // ip -> expiresAt
 const BAN_DURATION_MS = 24 * 60 * 60 * 1000;
 
 function isIpBanned(ip) {
@@ -53,33 +61,28 @@ setInterval(() => {
   for (const [ip, until] of bannedIPs.entries()) if (now > until) bannedIPs.delete(ip);
 }, 60 * 60 * 1000);
 
-// ================== TARTÓS rossz kombináció számláló (JSON fájl) ==================
-const DATA_DIR = path.join(__dirname, 'data');
-const FAIL_FILE = path.join(DATA_DIR, 'failedAttempts.json');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+/* =========================
+   Rossz kombináció számláló (memóriában, napi reset)
+   ========================= */
+const badCombAttempts = new Map(); // ip -> { count, firstAttempt }
+const MAX_BAD_ATTEMPTS = 10;
+const ATTEMPT_RESET_MS = 24 * 60 * 60 * 1000; // 24 óra
 
-let failedAttempts = Object.create(null); // { "ip": number }
-try {
-  if (fs.existsSync(FAIL_FILE)) {
-    const raw = fs.readFileSync(FAIL_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') failedAttempts = parsed;
+function recordBadAttempt(ip) {
+  const data = badCombAttempts.get(ip) || { count: 0, firstAttempt: Date.now() };
+  if (Date.now() - data.firstAttempt > ATTEMPT_RESET_MS) {
+    data.count = 0;
+    data.firstAttempt = Date.now();
   }
-} catch { failedAttempts = Object.create(null); }
-
-function saveFailedAttempts() {
-  try {
-    const tmp = FAIL_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(failedAttempts, null, 2));
-    fs.renameSync(tmp, FAIL_FILE);
-  } catch (e) {
-    console.log('failedAttempts mentési hiba:', e.message);
-  }
+  data.count++;
+  badCombAttempts.set(ip, data);
+  return data.count;
 }
 
-const MAX_ATTEMPTS = 10;
-
-// ================== Részletes GEO formázók – KÜLÖN-KÜLÖN ==================
+/* =========================
+   RÉSZLETES GEO LOG LISTÁK (3 KÜLÖN)
+   ========================= */
+// 1) TELJES lista – általános HTML látogatókhoz
 function formatGeoDataTeljes(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -113,6 +116,7 @@ function formatGeoDataTeljes(geo) {
   );
 }
 
+// 2) VPN/Proxy lista – VPN riasztásokhoz
 function formatGeoDataVpn(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -146,6 +150,7 @@ function formatGeoDataVpn(geo) {
   );
 }
 
+// 3) REPORT lista – rossz kombinációkhoz (TELJES URL-el)
 function formatGeoDataReport(geo, pageUrl) {
   return (
     (pageUrl ? `**Oldal:** ${pageUrl}\n` : '') +
@@ -180,13 +185,17 @@ function formatGeoDataReport(geo, pageUrl) {
   );
 }
 
-// ================== GEO lekérés és VPN ellenőrzés ==================
+/* =========================
+   Geo lekérés + VPN ellenőrzés
+   ========================= */
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
     if (geo.data.success === false || geo.data.type === 'error') return {};
     return geo.data;
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 async function isVpnProxy(ip) {
   try {
@@ -196,21 +205,44 @@ async function isVpnProxy(ip) {
       return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
     }
     return false;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
-// ================== GLOBÁLIS IP BAN middleware ==================
+/* =========================
+   Banned oldalak direkt route-ok (hogy mindig kiszolgáljuk őket)
+   ========================= */
+app.get('/banned-ip.html', (req, res) => {
+  const p = path.join(__dirname, 'public', 'banned-ip.html');
+  if (fs.existsSync(p)) return res.sendFile(p);
+  res.status(404).send('banned-ip.html hiányzik a /public-ból');
+});
+app.get('/banned-vpn.html', (req, res) => {
+  const p = path.join(__dirname, 'public', 'banned-vpn.html');
+  if (fs.existsSync(p)) return res.sendFile(p);
+  res.status(404).send('banned-vpn.html hiányzik a /public-ból');
+});
+
+/* =========================
+   Globális IP ban middleware
+   (DE: engedjük át a banned oldalakra)
+   ========================= */
 app.use((req, res, next) => {
+  if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html') return next();
+
   const ip = getClientIp(req);
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
     const page = path.join(__dirname, 'public', 'banned-ip.html');
-    if (fs.existsSync(page)) return res.redirect('/banned-ip.html'); // azonnali ÁTIRÁNYÍTÁS
-    return res.status(403).send(`Az IP címed ideiglenesen tiltva van (~${Math.ceil(remainingBanMs(ip)/(60*60*1000))} óra). 🚫`);
+    if (fs.existsSync(page)) return res.status(403).sendFile(page); // NINCS redirect loop
+    return res.status(403).send('Az IP címed ideiglenesen tiltva van. 🚫');
   }
   next();
 });
 
-// ================== Központi HTML logoló + VPN szűrő ==================
+/* =========================
+   HTML logoló + VPN szűrő
+   ========================= */
 app.use(async (req, res, next) => {
   const publicDir = path.join(__dirname, 'public');
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
@@ -232,9 +264,9 @@ app.use(async (req, res, next) => {
 
   if (!MY_IPS.includes(ip)) {
     axios.post(MAIN_WEBHOOK, {
-      username: "HTML log",
+      username: "Látogató Naplózó",
       embeds: [{
-        title: 'Új HTML látogató',
+        title: 'Új látogató (HTML)',
         description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
         color: 0x800080
       }]
@@ -242,34 +274,40 @@ app.use(async (req, res, next) => {
   }
 
   const vpnCheck = await isVpnProxy(ip);
-  if (vpnCheck && !MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+  if (vpnCheck && !WHITELISTED_IPS.includes(ip)) {
     axios.post(ALERT_WEBHOOK, {
-      username: "VPN figyelő",
+      username: "VPN Figyelő",
       embeds: [{
-        title: 'VPN/proxy vagy TOR észlelve',
+        title: 'VPN/proxy vagy TOR!',
         description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
         color: 0xff0000
       }]
     }).catch(()=>{});
     const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-    if (fs.existsSync(bannedVpnPage)) return res.redirect('/banned-vpn.html'); // ÁTIRÁNYÍTÁS
+    if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage); // NINCS redirect
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
   }
-
   next();
 });
 
-// ================== Statikus fájlok ==================
+/* =========================
+   Statikus fájlok
+   ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ================== FŐOLDAL: mindig /public/szaby/index.html (URL-ben NINCS /szaby) ==================
+/* =========================
+   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
+   ========================= */
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
-  if (fs.existsSync(filePath)) return res.sendFile(filePath);
-  return res.status(404).send('Főoldal nem található');
+  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
 
-// ================== Admin kézi IP ban ==================
+/* =========================
+   Admin kézi IP ban (POST /admin/ban)
+   Header: x-ban-secret: <BAN_SECRET>
+   Body: { "ip": "1.2.3.4" }
+   ========================= */
 app.post('/admin/ban', express.json(), (req, res) => {
   const secret = req.headers['x-ban-secret'];
   if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
@@ -279,60 +317,40 @@ app.post('/admin/ban', express.json(), (req, res) => {
   return res.json({ ok:true, bannedIp: targetIp, remainingMs: remainingBanMs(targetIp) });
 });
 
-// ================== REPORT: minden /report = rossz kombináció ==================
+/* =========================
+   Report: rossz kombináció
+   ========================= */
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body || {};
   const geoData = await getGeo(ip);
-  const fromUrl = page || req.get('referer') || `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
-    // számláló növelés + mentés fájlba
-    const current = Number(failedAttempts[ip] || 0) + 1;
-    failedAttempts[ip] = current;
-    saveFailedAttempts();
+  const count = recordBadAttempt(ip);
 
-    // log minden próbáról
-    axios.post(ALERT_WEBHOOK, {
-      username: "Rossz kombináció",
-      embeds: [{
-        title: `Rossz kombináció próbálkozás (${current}/${MAX_ATTEMPTS})`,
-        description: `**IP:** ${ip}\n**Művelet:** ${reason || 'ismeretlen'}\n` + formatGeoDataReport(geoData, fromUrl),
-        color: 0xffa500
-      }]
-    }).catch(()=>{});
+  // sárga: próbálkozás
+  axios.post(ALERT_WEBHOOK, {
+    username: "Kombináció figyelő",
+    embeds: [{
+      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok rossz kombináció!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
+      description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
+      color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
+    }]
+  }).catch(() => {});
 
-    if (current >= MAX_ATTEMPTS) {
-      banIp(ip);
-      // nullázd a számlálót a ban kezdetén (hogy új ablak induljon a feloldás után)
-      delete failedAttempts[ip];
-      saveFailedAttempts();
-
-      // piros riasztás
-      axios.post(ALERT_WEBHOOK, {
-        username: "IP Tiltás",
-        embeds: [{
-          title: 'IP 24 órára tiltva (max próbálkozás elérve)',
-          description: `**IP:** ${ip}\n` + formatGeoDataReport(geoData, fromUrl),
-          color: 0xff0000
-        }]
-      }).catch(()=>{});
-
-      // AZONNALI ÁTIRÁNYÍTÁS a tiltó oldalra
-      const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
-      if (fs.existsSync(bannedPage)) return res.redirect('/banned-ip.html');
-      return res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
-    }
+  if (count >= MAX_BAD_ATTEMPTS && !MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+    banIp(ip);
+    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
+    return fs.existsSync(bannedPage)
+      ? res.status(403).sendFile(bannedPage) // KÖZVETLEN FILE – nem redirect
+      : res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
   }
 
-  return res.json({ ok: true });
+  res.json({ ok: true });
 });
 
-// ================== 404 ==================
-app.use((req, res) => {
-  res.status(404).send('404 Not Found');
-});
+/* =========================
+   404
+   ========================= */
+app.use((req, res) => res.status(404).send('404 Not Found'));
 
-app.listen(PORT, () => {
-  console.log(`Szerver elindult: http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
