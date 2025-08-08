@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
 
 /* =========================
    IP normalizálás + IP lekérés
@@ -52,6 +53,7 @@ function isIpBanned(ip) {
   return true;
 }
 function banIp(ip) { bannedIPs.set(ip, Date.now() + BAN_DURATION_MS); }
+function unbanIp(ip) { bannedIPs.delete(ip); } // <<< EGY IP FELOLDÁSA
 function remainingBanMs(ip) {
   const until = bannedIPs.get(ip);
   return until ? Math.max(0, until - Date.now()) : 0;
@@ -211,7 +213,7 @@ async function isVpnProxy(ip) {
 }
 
 /* =========================
-   Banned oldalak direkt route-ok (hogy mindig kiszolgáljuk őket)
+   Banned oldalak direkt route-ok
    ========================= */
 app.get('/banned-ip.html', (req, res) => {
   const p = path.join(__dirname, 'public', 'banned-ip.html');
@@ -226,7 +228,7 @@ app.get('/banned-vpn.html', (req, res) => {
 
 /* =========================
    Globális IP ban middleware
-   (DE: engedjük át a banned oldalakra)
+   (banned oldalak átengedve)
    ========================= */
 app.use((req, res, next) => {
   if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html') return next();
@@ -234,7 +236,7 @@ app.use((req, res, next) => {
   const ip = getClientIp(req);
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
     const page = path.join(__dirname, 'public', 'banned-ip.html');
-    if (fs.existsSync(page)) return res.status(403).sendFile(page); // NINCS redirect loop
+    if (fs.existsSync(page)) return res.status(403).sendFile(page);
     return res.status(403).send('Az IP címed ideiglenesen tiltva van. 🚫');
   }
   next();
@@ -284,7 +286,7 @@ app.use(async (req, res, next) => {
       }]
     }).catch(()=>{});
     const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-    if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage); // NINCS redirect
+    if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
     return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
   }
   next();
@@ -304,9 +306,87 @@ app.get('/', (req, res) => {
 });
 
 /* =========================
-   Admin kézi IP ban (POST /admin/ban)
-   Header: x-ban-secret: <BAN_SECRET>
-   Body: { "ip": "1.2.3.4" }
+   Admin – böngészős felület (GET /admin)
+   ========================= */
+app.get('/admin', (req, res) => {
+  res.send(`<!doctype html>
+<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin – IP Ban/Unban</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;background:#0f1115;color:#e8eaf0;display:flex;min-height:100vh;align-items:center;justify-content:center}
+  .card{background:#151922;padding:20px;border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,.4);max-width:440px;width:100%}
+  h1{font-size:18px;margin:0 0 12px}
+  label{display:block;margin:10px 0 4px;font-size:14px;color:#b6bdd1}
+  input{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3142;background:#0f131b;color:#e8eaf0}
+  button{margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#5865F2;color:white;font-weight:600;cursor:pointer}
+  .row{display:flex;gap:8px}
+  .row>button{flex:1}
+  .msg{margin-top:10px;font-size:14px}
+</style></head>
+<body><div class="card">
+  <h1>Admin – IP Ban / Unban</h1>
+  <form id="adminForm">
+    <label>Admin jelszó</label>
+    <input name="password" type="password" placeholder="Admin jelszó" required>
+    <label>IP cím</label>
+    <input name="ip" placeholder="1.2.3.4" required>
+    <div class="row">
+      <button type="submit" data-action="ban">IP BAN 24h</button>
+      <button type="submit" data-action="unban">IP UNBAN</button>
+    </div>
+  </form>
+  <div class="msg" id="msg"></div>
+  <script>
+    const form = document.getElementById('adminForm');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const action = e.submitter?.dataset?.action || 'ban';
+      msg.textContent = 'Küldés...';
+      const fd = new FormData(form);
+      const body = new URLSearchParams();
+      for (const [k,v] of fd) body.append(k,v);
+      const url = action === 'ban' ? '/admin/ban/form' : '/admin/unban/form';
+      const r = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body
+      });
+      const t = await r.text();
+      msg.textContent = t;
+      if (r.ok) form.reset();
+    });
+  </script>
+</div></body></html>`);
+});
+
+/* =========================
+   Admin – BAN/UNBAN (HTML form, szerver oldali jelszóval)
+   ========================= */
+app.post('/admin/ban/form', express.urlencoded({ extended: true }), (req, res) => {
+  const { password, ip } = req.body || {};
+  if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
+  const targetIp = normalizeIp((ip || '').trim());
+  if (!targetIp) return res.status(400).send('Hiányzó IP.');
+  banIp(targetIp);
+  res.send(`✅ IP ${targetIp} tiltva lett 24 órára.`);
+});
+
+app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res) => {
+  const { password, ip } = req.body || {};
+  if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
+  const targetIp = normalizeIp((ip || '').trim());
+  if (!targetIp) return res.status(400).send('Hiányzó IP.');
+  if (bannedIPs.has(targetIp)) {
+    unbanIp(targetIp);
+    return res.send(`✅ IP ${targetIp} feloldva.`);
+  } else {
+    return res.status(404).send('❌ Ez az IP nincs tiltva.');
+  }
+});
+
+/* =========================
+   Admin – API (BAN/UNBAN) – ha Postman/cURL kell
    ========================= */
 app.post('/admin/ban', express.json(), (req, res) => {
   const secret = req.headers['x-ban-secret'];
@@ -315,6 +395,19 @@ app.post('/admin/ban', express.json(), (req, res) => {
   if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
   banIp(targetIp);
   return res.json({ ok:true, bannedIp: targetIp, remainingMs: remainingBanMs(targetIp) });
+});
+
+app.post('/admin/unban', express.json(), (req, res) => {
+  const secret = req.headers['x-ban-secret'];
+  if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
+  const targetIp = normalizeIp(req.body?.ip || '');
+  if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
+  if (bannedIPs.has(targetIp)) {
+    unbanIp(targetIp);
+    return res.json({ ok:true, unbannedIp: targetIp });
+  } else {
+    return res.status(404).json({ ok:false, error:'ip not found in ban list' });
+  }
 });
 
 /* =========================
@@ -327,7 +420,7 @@ app.post('/report', express.json(), async (req, res) => {
 
   const count = recordBadAttempt(ip);
 
-  // sárga: próbálkozás
+  // Discord log
   axios.post(ALERT_WEBHOOK, {
     username: "Kombináció figyelő",
     embeds: [{
@@ -341,11 +434,24 @@ app.post('/report', express.json(), async (req, res) => {
     banIp(ip);
     const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
     return fs.existsSync(bannedPage)
-      ? res.status(403).sendFile(bannedPage) // KÖZVETLEN FILE – nem redirect
+      ? res.status(403).sendFile(bannedPage) // közvetlen file – nincs redirect
       : res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
   }
 
   res.json({ ok: true });
+});
+
+/* =========================
+   Statikus fájlok
+   ========================= */
+app.use(express.static(path.join(__dirname, 'public')));
+
+/* =========================
+   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
+   ========================= */
+app.get('/', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
+  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
 
 /* =========================
