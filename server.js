@@ -421,23 +421,21 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   // Véglegesen hozzáadjuk az IP-t a tiltott listához
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
-    
+
     let bannedList;
     try {
       bannedList = JSON.parse(data);
-      // Ellenőrizzük, hogy a bannedList tömb típusú-e
-      if (!Array.isArray(bannedList.ips)) {
-        bannedList.ips = [];  // Ha nem, inicializáljuk üres tömbbel
-      }
+      if (!Array.isArray(bannedList)) bannedList = [];
     } catch (parseError) {
       return res.status(500).send('A JSON fájl nem formázott helyesen.');
     }
 
-    bannedList.ips.push(targetIp);  // IP hozzáadása a fájlhoz
+    bannedList.push(targetIp);  // IP hozzáadása a fájlhoz
     permanentBannedIPs.push(targetIp);  // IP hozzáadása a memóriához
 
     fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
       if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
+      res.send(`✅ IP ${targetIp} véglegesen tiltva lett.`);
       
       // Discord log küldése
       axios.post(ALERT_WEBHOOK, {
@@ -454,7 +452,7 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
       if (fs.existsSync(bannedPage)) {
         return res.status(403).sendFile(bannedPage); // közvetlen fájl
       } else {
-        return res.status(403).send('Az IP véglegesen le van tiltva. ✅');
+        return res.status(403).send('Az IP véglegesen le van tiltva. 🚫');
       }
     });
   });
