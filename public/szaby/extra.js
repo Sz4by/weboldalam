@@ -43,3 +43,9 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
+
+// Modal és zene lejátszása (Elfogadom gombra kattintás)
+document.getElementById("acceptBtn").onclick = function() {
+    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
+    document.getElementById("audio").play(); // Zene elindítása
+};
