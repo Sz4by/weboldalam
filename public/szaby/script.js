@@ -59,6 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
+// Kattintás esemény hozzáadása a hangerő ikonhoz
+const volumeBtn = document.getElementById("volumeBtn");
+const volumeSliderWrap = document.getElementById("volumeSliderWrap");
+
+volumeBtn.addEventListener("click", function () {
+  volumeSliderWrap.classList.toggle("active");  // Az 'active' osztály hozzáadása/eltávolítása
+});
+
 
 function loadSong(idx, autoPlay = false) {
   audio.src = playlist[idx].src;
