@@ -400,6 +400,9 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
+// Memóriában tárolt véglegesen tiltott IP-k
+let permanentBannedIPs = [];
+
 // =========================
 // Végleges tiltás (IP permanent-ban)
 // =========================
@@ -418,14 +421,11 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   // Véglegesen hozzáadjuk az IP-t a tiltott listához
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
-    
+
     let bannedList;
     try {
       bannedList = JSON.parse(data);
-      // Ellenőrizzük, hogy a bannedList tömb típusú-e
-      if (!Array.isArray(bannedList)) {
-        bannedList = [];  // Ha nem tömb, állítsuk be üres tömbre
-      }
+      if (!Array.isArray(bannedList)) bannedList = [];
     } catch (parseError) {
       return res.status(500).send('A JSON fájl nem formázott helyesen.');
     }
@@ -497,6 +497,7 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
     }
   });
 });
+
 
 /* =========================
 // Rossz kombináció figyelő
