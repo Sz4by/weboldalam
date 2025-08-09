@@ -305,16 +305,6 @@ html, body {
   cursor: pointer;
   outline: none;
 }
-.volume-slider-wrap {
-  display: none;
-  position: absolute;
-  top: 44px; right: 8px;
-  background: rgba(34,45,52,0.95);
-  border-radius: 13px;
-  padding: 12px 6px;
-  box-shadow: 0 0 20px #56e0f877;
-  z-index: 6;
-}
 .volume-slider {
   writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
