@@ -240,14 +240,25 @@ app.get('/banned-permanent.html', (req, res) => {
 app.use((req, res, next) => {
   if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html' || req.path === '/banned-permanent.html') return next();
 
-  const ip = getClientIp(req);
-  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
-    const page = path.join(__dirname, 'public', 'banned-ip.html');
-    if (fs.existsSync(page)) return res.status(403).sendFile(page);
-    return res.status(403).send('Az IP címed ideiglenesen tiltva van. 🚫');
+  const ip = getClientIp(req);  // Az IP lekérése
+
+  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+    if (isIpBanned(ip)) {
+      // Ha az IP 24 órás tiltás alatt van
+      const page = path.join(__dirname, 'public', 'banned-ip.html');
+      if (fs.existsSync(page)) return res.status(403).sendFile(page);  // A 24 órás tiltás fájl kiszolgálása
+    }
+
+    // Ha az IP véglegesen le van tiltva
+    const permanentBannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
+    if (permanentBannedIPs.includes(ip)) {
+      if (fs.existsSync(permanentBannedPage)) return res.status(403).sendFile(permanentBannedPage);  // A végleges tiltás fájl kiszolgálása
+    }
   }
-  next();
+
+  next();  // Ha nem tiltott az IP, folytatja a kérés feldolgozását
 });
+
 
 // =========================
 // HTML logoló + VPN szűrő
