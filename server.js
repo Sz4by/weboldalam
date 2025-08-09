@@ -431,30 +431,6 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-// 24 órás tiltás feloldásának logolása
-app.use((req, res, next) => {
-  const ip = getClientIp(req);  // Az IP lekérése
-
-  // Ellenőrizzük, hogy van-e feloldott 24 órás tiltás
-  if (remainingBanMs(ip) === 0) {
-    // Feloldás logolás - Discord
-    axios.post(ALERT_WEBHOOK, {
-      username: "IP Feloldás Log",
-      embeds: [{
-        title: 'IP Tiltás Feloldva (24 órás)',
-        description: `**IP-cím:** ${ip}\n**Akció:** 24 órás tiltás feloldva`,
-        color: 0x00ff00  // Zöld szín (sikeres feloldás)
-      }]
-    }).catch(() => {});
-
-    // A tiltás feloldásához végrehajtjuk az ip feloldását
-    unbanIp(ip);
-  }
-
-  next();  // Ha nem tiltott az IP, folytatja a kérés feldolgozását
-});
-
-
 // Memóriában tárolt véglegesen tiltott IP-k
 let permanentBannedIPs = [];
 
@@ -576,7 +552,6 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
-
     
 /* =========================
 // Statikus fájlok
