@@ -392,12 +392,9 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-// Memóriában tárolt véglegesen tiltott IP-k
-let permanentBannedIPs = [];
-
-// =========================
-// Végleges tiltás (IP permanent-ban)
-// =========================
+/* =========================
+   Végleges tiltás (IP permanent-ban)
+   ========================= */
 app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -414,7 +411,18 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
     
-    const bannedList = JSON.parse(data);
+    let bannedList;
+    try {
+      bannedList = JSON.parse(data);
+    } catch (parseError) {
+      return res.status(500).send('A JSON fájl nem formázott helyesen.');
+    }
+
+    // Ellenőrizzük, hogy a bannedList tömb típusú-e
+    if (!Array.isArray(bannedList)) {
+      return res.status(500).send('A tiltott IP lista nem egy tömb.');
+    }
+
     bannedList.push(targetIp);  // IP hozzáadása a fájlhoz
     permanentBannedIPs.push(targetIp);  // IP hozzáadása a memóriához
 
@@ -435,9 +443,9 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   });
 });
 
-// =========================
-// Végleges IP feloldás
-// =========================
+/* =========================
+   Végleges IP feloldás
+   ========================= */
 app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -475,9 +483,9 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
   });
 });
 
-// =========================
-// Rossz kombináció figyelő
-// =========================
+/* =========================
+   Rossz kombináció figyelő
+   ========================= */
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body || {};
@@ -510,6 +518,7 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
+
 /* =========================
    Statikus fájlok
    ========================= */
