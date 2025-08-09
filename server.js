@@ -392,9 +392,12 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-/* =========================
-   Végleges tiltás (IP permanent-ban)
-   ========================= */
+// Memóriában tárolt véglegesen tiltott IP-k
+let permanentBannedIPs = [];
+
+// =========================
+// Végleges tiltás (IP permanent-ban)
+// =========================
 app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -444,8 +447,8 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
 });
 
 /* =========================
-   Végleges IP feloldás
-   ========================= */
+// Végleges IP feloldás
+// ========================= */
 app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
