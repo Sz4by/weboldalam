@@ -393,6 +393,78 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
 });
 
 /* =========================
+   Végleges tiltás (IP permanent-ban)
+   ========================= */
+app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (req, res) => {
+  const { password, ip } = req.body || {};
+  if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
+  
+  const targetIp = normalizeIp((ip || '').trim());
+  if (!targetIp) return res.status(400).send('Hiányzó IP.');
+
+  // Véglegesen hozzáadjuk az IP-t a tiltott listához
+  fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
+    if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
+    
+    const bannedList = JSON.parse(data);
+    bannedList.push(targetIp);  // IP hozzáadása
+    
+    fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
+      if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
+      res.send(`✅ IP ${targetIp} véglegesen tiltva lett.`);
+      
+      // Discord log küldése
+      axios.post(ALERT_WEBHOOK, {
+        username: "IP Tiltó",
+        embeds: [{
+          title: 'Végleges tiltás!',
+          description: `**IP-cím:** ${targetIp}\n**Akció:** Végleges tiltás`,
+          color: 0xff0000
+        }]
+      }).catch(() => {});
+    });
+  });
+});
+
+/* =========================
+   Végleges IP feloldás
+   ========================= */
+app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
+  const { password, ip } = req.body || {};
+  if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
+  
+  const targetIp = normalizeIp((ip || '').trim());
+  if (!targetIp) return res.status(400).send('Hiányzó IP.');
+
+  // Törlés a végleges tiltott listából
+  fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
+    if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
+
+    const bannedList = JSON.parse(data);
+    const index = bannedList.indexOf(targetIp);
+    if (index > -1) {
+      bannedList.splice(index, 1);  // IP törlés
+      fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
+        if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
+        res.send(`✅ IP ${targetIp} véglegesen feloldva lett.`);
+        
+        // Discord log küldése
+        axios.post(ALERT_WEBHOOK, {
+          username: "IP Feloldó",
+          embeds: [{
+            title: 'Végleges feloldás!',
+            description: `**IP-cím:** ${targetIp}\n**Akció:** Végleges feloldás`,
+            color: 0x00ff00
+          }]
+        }).catch(() => {});
+      });
+    } else {
+      return res.status(404).send('❌ Ez az IP nincs a végleges tiltott listában.');
+    }
+  });
+});
+
+/* =========================
    Admin – API (BAN/UNBAN) – ha Postman/cURL kell
    ========================= */
 app.post('/admin/ban', express.json(), (req, res) => {
@@ -418,42 +490,6 @@ app.post('/admin/unban', express.json(), (req, res) => {
 });
 
 /* =========================
-   Report: rossz kombináció
-   ========================= */
-app.post('/report', express.json(), async (req, res) => {
-  const ip = getClientIp(req);
-  const { reason, page } = req.body || {};
-
-  // SAJÁT IP: ne logolja rossz kombinációnak és ne tiltsa
-  if (MY_IPS.includes(ip)) {
-    return res.json({ ok: true, ignored: true });
-  }
-
-  const geoData = await getGeo(ip);
-  const count = recordBadAttempt(ip);
-
-  // Discord log
-  axios.post(ALERT_WEBHOOK, {
-    username: "Kombináció figyelő",
-    embeds: [{
-      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok rossz kombináció!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
-      description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
-      color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
-    }]
-  }).catch(() => {});
-
-  if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
-    banIp(ip);
-    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
-    return fs.existsSync(bannedPage)
-      ? res.status(403).sendFile(bannedPage) // közvetlen file – nincs redirect
-      : res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
-  }
-
-  res.json({ ok: true });
-});
-
-/* =========================
    Statikus fájlok
    ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
@@ -472,4 +508,3 @@ app.get('/', (req, res) => {
 app.use((req, res) => res.status(404).send('404 Not Found'));
 
 app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
-                                 
