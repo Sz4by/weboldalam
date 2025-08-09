@@ -431,9 +431,7 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-// =========================
-// 24 órás feloldás logolása (Discord)
-// =========================
+// 24 órás tiltás feloldásának logolása
 app.use((req, res, next) => {
   const ip = getClientIp(req);  // Az IP lekérése
 
@@ -455,6 +453,7 @@ app.use((req, res, next) => {
 
   next();  // Ha nem tiltott az IP, folytatja a kérés feldolgozását
 });
+
 
 // Memóriában tárolt véglegesen tiltott IP-k
 let permanentBannedIPs = [];
@@ -577,6 +576,7 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
+
     
 /* =========================
 // Statikus fájlok
