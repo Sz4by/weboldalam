@@ -72,7 +72,7 @@ volumeBtn.addEventListener("click", function () {
 const volumeSlider = document.getElementById("volumeSlider");
 
 volumeSlider.addEventListener("input", function () {
-  audio.volume = 0.3;  // A hangerő 30%-ra lesz beállítva (alkalmazd itt, amikor elindítod a zenét)
+  audio.volume = 0.1;  // A hangerő 30%-ra lesz beállítva (alkalmazd itt, amikor elindítod a zenét)
 });
 
 
