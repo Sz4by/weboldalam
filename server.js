@@ -212,29 +212,31 @@ async function isVpnProxy(ip) {
   }
 }
 
-/* =========================
-   Banned oldalak direkt route-ok
-   ========================= */
+// =========================
+// Banned oldalak direkt route-ok
+// =========================
 app.get('/banned-ip.html', (req, res) => {
   const p = path.join(__dirname, 'public', 'banned-ip.html');
   if (fs.existsSync(p)) return res.sendFile(p);
   res.status(404).send('banned-ip.html hiányzik a /public-ból');
 });
+
 app.get('/banned-vpn.html', (req, res) => {
   const p = path.join(__dirname, 'public', 'banned-vpn.html');
   if (fs.existsSync(p)) return res.sendFile(p);
   res.status(404).send('banned-vpn.html hiányzik a /public-ból');
 });
+
 app.get('/banned-permanent.html', (req, res) => {
   const p = path.join(__dirname, 'public', 'banned-permanent.html');
   if (fs.existsSync(p)) return res.sendFile(p);
   res.status(404).send('banned-permanent.html hiányzik a /public-ból');
 });
 
-/* =========================
-   Globális IP ban middleware
-   (banned oldalak átengedve)
-   ========================= */
+// =========================
+// Globális IP ban middleware
+// (banned oldalak átengedve)
+// =========================
 app.use((req, res, next) => {
   if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html' || req.path === '/banned-permanent.html') return next();
 
@@ -247,9 +249,9 @@ app.use((req, res, next) => {
   next();
 });
 
-/* =========================
-   HTML logoló + VPN szűrő
-   ========================= */
+// =========================
+// HTML logoló + VPN szűrő
+// =========================
 app.use(async (req, res, next) => {
   const publicDir = path.join(__dirname, 'public');
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
@@ -297,22 +299,22 @@ app.use(async (req, res, next) => {
   next();
 });
 
-/* =========================
-   Statikus fájlok
-   ========================= */
+// =========================
+// Statikus fájlok
+// =========================
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* =========================
-   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
-   ========================= */
+// =========================
+// Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
+// =========================
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
 
-/* =========================
-   Admin – böngészős felület (GET /admin)
-   ========================= */
+// =========================
+// Admin – böngészős felület (GET /admin)
+// =========================
 app.get('/admin', (req, res) => {
   res.send(`<!doctype html>
 <html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -367,9 +369,9 @@ app.get('/admin', (req, res) => {
 </div></body></html>`);
 });
 
-/* =========================
-   Admin – BAN/UNBAN (HTML form, szerver oldali jelszóval)
-   ========================= */
+// =========================
+// Admin – BAN/UNBAN (HTML form, szerver oldali jelszóval)
+// =========================
 app.post('/admin/ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -522,21 +524,21 @@ app.post('/report', express.json(), async (req, res) => {
 });
     
 /* =========================
-   Statikus fájlok
-   ========================= */
+// Statikus fájlok
+// ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
 
 /* =========================
-   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
-   ========================= */
+// Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
+// ========================= */
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
 
 /* =========================
-   404
-   ========================= */
+// 404
+// ========================= */
 app.use((req, res) => res.status(404).send('404 Not Found'));
 
 app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
