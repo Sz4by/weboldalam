@@ -23,6 +23,7 @@ function normalizeIp(ip) {
   if (ip === '::1') ip = '127.0.0.1';
   return ip.toLowerCase();
 }
+
 function getClientIp(req) {
   let ip =
     req.headers['cf-connecting-ip'] ||
@@ -199,6 +200,7 @@ async function getGeo(ip) {
     return {};
   }
 }
+
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
@@ -220,6 +222,7 @@ app.get('/banned-ip.html', (req, res) => {
   if (fs.existsSync(p)) return res.sendFile(p);
   res.status(404).send('banned-ip.html hiányzik a /public-ból');
 });
+
 app.get('/banned-vpn.html', (req, res) => {
   const p = path.join(__dirname, 'public', 'banned-vpn.html');
   if (fs.existsSync(p)) return res.sendFile(p);
@@ -227,90 +230,12 @@ app.get('/banned-vpn.html', (req, res) => {
 });
 
 /* =========================
-   Globális IP ban middleware
-   (banned oldalak átengedve)
-   ========================= */
-app.use((req, res, next) => {
-  if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html') return next();
-
-  const ip = getClientIp(req);
-  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
-    const page = path.join(__dirname, 'public', 'banned-ip.html');
-    if (fs.existsSync(page)) return res.status(403).sendFile(page);
-    return res.status(403).send('Az IP címed ideiglenesen tiltva van. 🚫');
-  }
-  next();
-});
-
-/* =========================
-   HTML logoló + VPN szűrő
-   ========================= */
-app.use(async (req, res, next) => {
-  const publicDir = path.join(__dirname, 'public');
-  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, '');
-
-  let servesHtml = false;
-  if (req.method === 'GET' || req.method === 'HEAD') {
-    if (req.path === '/') servesHtml = true;
-    else if (cleanPath.toLowerCase().endsWith('.html')) {
-      servesHtml = fs.existsSync(path.join(publicDir, cleanPath));
-    } else if (!path.extname(cleanPath)) {
-      servesHtml = fs.existsSync(path.join(publicDir, cleanPath, 'index.html'));
-    }
-  }
-  if (!servesHtml) return next();
-
-  const ip = getClientIp(req);
-  const geoData = await getGeo(ip);
-
-  if (!MY_IPS.includes(ip)) {
-    axios.post(MAIN_WEBHOOK, {
-      username: "Látogató Naplózó",
-      embeds: [{
-        title: 'Új látogató (HTML)',
-        description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
-        color: 0x800080
-      }]
-    }).catch(()=>{});
-  }
-
-  const vpnCheck = await isVpnProxy(ip);
-  if (vpnCheck && !WHITELISTED_IPS.includes(ip)) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN Figyelő",
-      embeds: [{
-        title: 'VPN/proxy vagy TOR!',
-        description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-    const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-    if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
-  }
-  next();
-});
-
-/* =========================
-   Statikus fájlok
-   ========================= */
-app.use(express.static(path.join(__dirname, 'public')));
-
-/* =========================
-   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
-   ========================= */
-app.get('/', (req, res) => {
-  const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
-  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
-});
-
-/* =========================
-   Admin – böngészős felület (GET /admin)
+   Admin felület – IP tiltás 24 órára, véglegesen
    ========================= */
 app.get('/admin', (req, res) => {
   res.send(`<!doctype html>
-<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="hu">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin – IP Ban/Unban</title>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;background:#0f1115;color:#e8eaf0;display:flex;min-height:100vh;align-items:center;justify-content:center}
@@ -332,6 +257,7 @@ app.get('/admin', (req, res) => {
     <input name="ip" placeholder="1.2.3.4" required>
     <div class="row">
       <button type="submit" data-action="ban">IP BAN 24h</button>
+      <button type="submit" data-action="permanent">IP Végleges BAN</button>
       <button type="submit" data-action="unban">IP UNBAN</button>
     </div>
   </form>
@@ -346,7 +272,7 @@ app.get('/admin', (req, res) => {
       const fd = new FormData(form);
       const body = new URLSearchParams();
       for (const [k,v] of fd) body.append(k,v);
-      const url = action === 'ban' ? '/admin/ban/form' : '/admin/unban/form';
+      const url = action === 'ban' ? '/admin/ban/form' : action === 'unban' ? '/admin/unban/form' : '/admin/ban/form';
       const r = await fetch(url, {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
@@ -386,67 +312,6 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
 });
 
 /* =========================
-   Admin – API (BAN/UNBAN) – ha Postman/cURL kell
-   ========================= */
-app.post('/admin/ban', express.json(), (req, res) => {
-  const secret = req.headers['x-ban-secret'];
-  if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
-  const targetIp = normalizeIp(req.body?.ip || '');
-  if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
-  banIp(targetIp);
-  return res.json({ ok:true, bannedIp: targetIp, remainingMs: remainingBanMs(targetIp) });
-});
-
-app.post('/admin/unban', express.json(), (req, res) => {
-  const secret = req.headers['x-ban-secret'];
-  if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
-  const targetIp = normalizeIp(req.body?.ip || '');
-  if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
-  if (bannedIPs.has(targetIp)) {
-    unbanIp(targetIp);
-    return res.json({ ok:true, unbannedIp: targetIp });
-  } else {
-    return res.status(404).json({ ok:false, error:'ip not found in ban list' });
-  }
-});
-
-/* =========================
-   Report: rossz kombináció
-   ========================= */
-app.post('/report', express.json(), async (req, res) => {
-  const ip = getClientIp(req);
-  const { reason, page } = req.body || {};
-
-  // SAJÁT IP: ne logolja rossz kombinációnak és ne tiltsa
-  if (MY_IPS.includes(ip)) {
-    return res.json({ ok: true, ignored: true });
-  }
-
-  const geoData = await getGeo(ip);
-  const count = recordBadAttempt(ip);
-
-  // Discord log
-  axios.post(ALERT_WEBHOOK, {
-    username: "Kombináció figyelő",
-    embeds: [{
-      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok rossz kombináció!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
-      description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
-      color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
-    }]
-  }).catch(() => {});
-
-  if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
-    banIp(ip);
-    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
-    return fs.existsSync(bannedPage)
-      ? res.status(403).sendFile(bannedPage) // közvetlen file – nincs redirect
-      : res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
-  }
-
-  res.json({ ok: true });
-});
-
-/* =========================
    Statikus fájlok
    ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
@@ -465,3 +330,4 @@ app.get('/', (req, res) => {
 app.use((req, res) => res.status(404).send('404 Not Found'));
 
 app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
+   
