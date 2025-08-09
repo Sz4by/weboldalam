@@ -13,6 +13,32 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
+// Fájl elérési útja
+const bannedFilePath = path.join(__dirname, 'banned-permanent-ips.json');
+
+// JSON fájl beolvasása
+function readBannedIPs() {
+  try {
+    const data = fs.readFileSync(bannedFilePath, 'utf8');
+    return JSON.parse(data);  // A fájl tartalmának beolvasása
+  } catch (err) {
+    return { ips: [] };  // Ha a fájl nem létezik, visszaadunk egy üres listát
+  }
+}
+
+// IP hozzáadása a fájlhoz
+function addToBannedIPs(ip) {
+  const bannedData = readBannedIPs();  // Beolvassuk a tiltott IP-ket
+
+  // Ha az IP még nincs benne, hozzáadjuk
+  if (!bannedData.ips.includes(ip)) {
+    bannedData.ips.push(ip);  // Hozzáadjuk az új IP-t
+  }
+
+  // A frissített adatokat visszaírjuk a fájlba
+  fs.writeFileSync(bannedFilePath, JSON.stringify(bannedData, null, 2), 'utf8');
+  console.log(`IP ${ip} hozzáadva a véglegesen tiltottakhoz.`);
+}
 
 /* =========================
    IP normalizálás + IP lekérés
@@ -228,8 +254,13 @@ app.get('/banned-vpn.html', (req, res) => {
 });
 
 app.get('/banned-permanent.html', (req, res) => {
-  const p = path.join(__dirname, 'public', 'banned-permanent.html');
-  if (fs.existsSync(p)) return res.sendFile(p);
+  const bannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
+  
+  if (fs.existsSync(bannedPage)) {
+    return res.status(403).sendFile(bannedPage); // Ne folytasd tovább, ha már válaszoltál
+  }
+  
+  // Ha nem található a fájl
   res.status(404).send('banned-permanent.html hiányzik a /public-ból');
 });
 
@@ -469,45 +500,62 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   });
 });
 
-// =========================
-// Végleges feloldás (IP permanent-unban)
-// =========================
-app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
+// Aszinkron fájlkezelés és IP hozzáadása
+app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
   
   const targetIp = normalizeIp((ip || '').trim());
   if (!targetIp) return res.status(400).send('Hiányzó IP.');
 
-  // Törlés a végleges tiltott listából (memóriából és fájlból)
+  // Beolvassuk a JSON fájlt aszinkron módon
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
 
-    let bannedList = JSON.parse(data);
-    const index = bannedList.indexOf(targetIp);
-    if (index > -1) {
-      bannedList.splice(index, 1);  // IP törlés a fájlból
-      permanentBannedIPs = permanentBannedIPs.filter(ip => ip !== targetIp);  // IP törlés a memóriából
-
-      fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
-        if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
-        res.send(`✅ IP ${targetIp} véglegesen feloldva lett.`);
-        
-        // Discord log küldése
-        axios.post(ALERT_WEBHOOK, {
-          username: "IP Feloldó",
-          embeds: [{
-            title: 'Végleges feloldás!',
-            description: `**IP-cím:** ${targetIp}\n**Akció:** Végleges feloldás`,
-            color: 0x00ff00
-          }]
-        }).catch(() => {});
-      });
-    } else {
-      return res.status(404).send('❌ Ez az IP nincs a végleges tiltott listában.');
+    let bannedList;
+    try {
+      bannedList = JSON.parse(data);  // A fájl tartalmának beolvasása
+      if (!Array.isArray(bannedList)) bannedList = [];
+    } catch (parseError) {
+      return res.status(500).send('A JSON fájl nem formázott helyesen.');
     }
+
+    // Ha az IP még nincs benne, hozzáadjuk
+    if (!bannedList.includes(targetIp)) {
+      bannedList.push(targetIp);  // IP hozzáadása a fájlhoz
+    }
+
+    // Frissítjük a memóriát is
+    permanentBannedIPs.push(targetIp);  // IP hozzáadása a memóriához
+
+    // Az új adatokat visszaírjuk a fájlba aszinkron módon
+    fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
+      if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
+      
+      // Ha sikeresen frissítettük, válasz küldése
+      res.send(`✅ IP ${targetIp} véglegesen tiltva lett.`);
+
+      // Discord log küldése
+      axios.post(ALERT_WEBHOOK, {
+        username: "IP Tiltó",
+        embeds: [{
+          title: 'Végleges tiltás!',
+          description: `**IP-cím:** ${targetIp}\n**Akció:** Végleges tiltás`,
+          color: 0xff0000
+        }]
+      }).catch(() => {});
+
+      // Ha az IP véglegesen tiltva lett, akkor nyisd meg a "banned-permanent.html"-t
+      const bannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
+      if (fs.existsSync(bannedPage)) {
+        return res.status(403).sendFile(bannedPage); // közvetlen fájl
+      } else {
+        return res.status(403).send('Az IP véglegesen le van tiltva. 🚫');
+      }
+    });
   });
 });
+
 
 
 /* =========================
