@@ -392,9 +392,12 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-/* =========================
-   Végleges tiltás (IP permanent-ban)
-   ========================= */
+// Memóriában tárolt véglegesen tiltott IP-k
+let permanentBannedIPs = [];
+
+// =========================
+// Végleges tiltás (IP permanent-ban)
+// =========================
 app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -402,13 +405,19 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   const targetIp = normalizeIp((ip || '').trim());
   if (!targetIp) return res.status(400).send('Hiányzó IP.');
 
+  // Ellenőrizzük, hogy már le van-e tiltva memóriában
+  if (permanentBannedIPs.includes(targetIp)) {
+    return res.status(400).send(`❌ Az IP ${targetIp} már véglegesen le van tiltva.`);
+  }
+
   // Véglegesen hozzáadjuk az IP-t a tiltott listához
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
     
     const bannedList = JSON.parse(data);
-    bannedList.push(targetIp);  // IP hozzáadása
-    
+    bannedList.push(targetIp);  // IP hozzáadása a fájlhoz
+    permanentBannedIPs.push(targetIp);  // IP hozzáadása a memóriához
+
     fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
       if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
       res.send(`✅ IP ${targetIp} véglegesen tiltva lett.`);
@@ -426,9 +435,9 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   });
 });
 
-/* =========================
-   Végleges IP feloldás
-   ========================= */
+// =========================
+// Végleges IP feloldás
+// =========================
 app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -436,14 +445,16 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
   const targetIp = normalizeIp((ip || '').trim());
   if (!targetIp) return res.status(400).send('Hiányzó IP.');
 
-  // Törlés a végleges tiltott listából
+  // Törlés a végleges tiltott listából (memóriából és fájlból)
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
 
     const bannedList = JSON.parse(data);
     const index = bannedList.indexOf(targetIp);
     if (index > -1) {
-      bannedList.splice(index, 1);  // IP törlés
+      bannedList.splice(index, 1);  // IP törlés a fájlból
+      permanentBannedIPs = permanentBannedIPs.filter(ip => ip !== targetIp);  // IP törlés a memóriából
+
       fs.writeFile('banned-permanent-ips.json', JSON.stringify(bannedList, null, 2), (err) => {
         if (err) return res.status(500).send('Hiba történt a lista frissítésekor.');
         res.send(`✅ IP ${targetIp} véglegesen feloldva lett.`);
@@ -464,47 +475,38 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
   });
 });
 
-/* =========================
-   Admin – API (BAN/UNBAN) – ha Postman/cURL kell
-   ========================= */
-app.post('/admin/ban', express.json(), (req, res) => {
-  const secret = req.headers['x-ban-secret'];
-  if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
-  const targetIp = normalizeIp(req.body?.ip || '');
-  if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
-  banIp(targetIp);
-  return res.json({ ok:true, bannedIp: targetIp, remainingMs: remainingBanMs(targetIp) });
-});
+// =========================
+// Rossz kombináció figyelő
+// =========================
+app.post('/report', express.json(), async (req, res) => {
+  const ip = getClientIp(req);
+  const { reason, page } = req.body || {};
 
-app.post('/admin/unban', express.json(), (req, res) => {
-  const secret = req.headers['x-ban-secret'];
-  if (secret !== process.env.BAN_SECRET) return res.status(401).json({ ok:false, error:'unauthorized' });
-  const targetIp = normalizeIp(req.body?.ip || '');
-  if (!targetIp) return res.status(400).json({ ok:false, error:'missing ip' });
-  if (bannedIPs.has(targetIp)) {
-    unbanIp(targetIp);
-    return res.json({ ok:true, unbannedIp: targetIp });
-  } else {
-    return res.status(404).json({ ok:false, error:'ip not found in ban list' });
+  // SAJÁT IP: ne logolja rossz kombinációnak és ne tiltsa
+  if (MY_IPS.includes(ip)) {
+    return res.json({ ok: true, ignored: true });
   }
+
+  const geoData = await getGeo(ip);
+  const count = recordBadAttempt(ip);
+
+  // Discord log
+  axios.post(ALERT_WEBHOOK, {
+    username: "Kombináció figyelő",
+    embeds: [{
+      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok rossz kombináció!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
+      description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
+      color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
+    }]
+  }).catch(() => {});
+
+  if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
+    banIp(ip);
+    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
+    return fs.existsSync(bannedPage)
+      ? res.status(403).sendFile(bannedPage) // közvetlen file – nincs redirect
+      : res.status(403).send('Az IP címed ideiglenesen tiltva lett (24h). 🚫');
+  }
+
+  res.json({ ok: true });
 });
-
-/* =========================
-   Statikus fájlok
-   ========================= */
-app.use(express.static(path.join(__dirname, 'public')));
-
-/* =========================
-   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
-   ========================= */
-app.get('/', (req, res) => {
-  const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
-  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
-});
-
-/* =========================
-   404
-   ========================= */
-app.use((req, res) => res.status(404).send('404 Not Found'));
-
-app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
