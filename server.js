@@ -423,8 +423,21 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
   const targetIp = normalizeIp((ip || '').trim());
   if (!targetIp) return res.status(400).send('Hiányzó IP.');
+
   if (bannedIPs.has(targetIp)) {
+    // Feloldás a 24 órás tiltásból
     unbanIp(targetIp);
+
+    // Discord log küldése a 24 órás feloldásról
+    axios.post(ALERT_WEBHOOK, {
+      username: "IP Feloldó",
+      embeds: [{
+        title: '24 órás tiltás feloldva!',
+        description: `**IP-cím:** ${targetIp}\n**Akció:** 24 órás tiltás feloldás`,
+        color: 0x00ff00
+      }]
+    }).catch(() => {});
+
     return res.send(`✅ IP ${targetIp} feloldva.`);
   } else {
     return res.status(404).send('❌ Ez az IP nincs tiltva.');
