@@ -225,13 +225,18 @@ app.get('/banned-vpn.html', (req, res) => {
   if (fs.existsSync(p)) return res.sendFile(p);
   res.status(404).send('banned-vpn.html hiányzik a /public-ból');
 });
+app.get('/banned-permanent.html', (req, res) => {
+  const p = path.join(__dirname, 'public', 'banned-permanent.html');
+  if (fs.existsSync(p)) return res.sendFile(p);
+  res.status(404).send('banned-permanent.html hiányzik a /public-ból');
+});
 
 /* =========================
    Globális IP ban middleware
    (banned oldalak átengedve)
    ========================= */
 app.use((req, res, next) => {
-  if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html') return next();
+  if (req.path === '/banned-ip.html' || req.path === '/banned-vpn.html' || req.path === '/banned-permanent.html') return next();
 
   const ip = getClientIp(req);
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip) && isIpBanned(ip)) {
@@ -333,6 +338,7 @@ app.get('/admin', (req, res) => {
     <div class="row">
       <button type="submit" data-action="ban">IP BAN 24h</button>
       <button type="submit" data-action="unban">IP UNBAN</button>
+      <button type="submit" data-action="permanent-ban">IP VÉGLEGES BAN</button> <!-- Végleges tiltás gomb -->
     </div>
   </form>
   <div class="msg" id="msg"></div>
@@ -346,7 +352,8 @@ app.get('/admin', (req, res) => {
       const fd = new FormData(form);
       const body = new URLSearchParams();
       for (const [k,v] of fd) body.append(k,v);
-      const url = action === 'ban' ? '/admin/ban/form' : '/admin/unban/form';
+      const url = action === 'ban' ? '/admin/ban/form' :
+        action === 'unban' ? '/admin/unban/form' : '/admin/permanent-ban/form';
       const r = await fetch(url, {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
