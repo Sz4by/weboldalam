@@ -59,14 +59,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// Kattintás esemény hozzáadása a hangerő ikonhoz
+// Hangerő gomb és csúszka kezelése
 const volumeBtn = document.getElementById("volumeBtn");
 const volumeSliderWrap = document.getElementById("volumeSliderWrap");
 
+// Ha rákattintanak a hangerő gombra, megjelenítjük/eltüntetjük a csúszkát
 volumeBtn.addEventListener("click", function () {
-  // Az 'active' osztály hozzáadása/eltávolítása
-  volumeSliderWrap.classList.toggle("active");
+  volumeSliderWrap.classList.toggle("active");  // Az 'active' osztály hozzáadása/eltávolítása
 });
+
+// Hangerő beállítása a csúszka értékével
+const volumeSlider = document.getElementById("volumeSlider");
+
+volumeSlider.addEventListener("input", function () {
+  audio.volume = volumeSlider.value;  // Beállítja a hangerőt
+});
+
 
 
 function loadSong(idx, autoPlay = false) {
