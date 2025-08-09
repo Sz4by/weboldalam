@@ -431,6 +431,44 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
+app.use((req, res, next) => {
+  const ip = getClientIp(req);  // Az IP lekérése
+
+  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+    // Ellenőrizzük a memóriát és a JSON fájlt
+    const bannedData = readBannedIPs();  // JSON-ból beolvassuk a tiltott IP-ket
+
+    // Ha az IP 24 órás tiltás alatt van a memóriában
+    if (isIpBanned(ip)) {
+      const page = path.join(__dirname, 'public', 'banned-ip.html');
+      if (fs.existsSync(page)) {
+        // Discord logolás - 24 órás tiltás
+        axios.post(ALERT_WEBHOOK, {
+          username: "IP Tiltás Log",
+          embeds: [{
+            title: 'IP Tiltás (24 órás)',
+            description: `**IP-cím:** ${ip}\n**Akció:** 24 órás tiltás`,
+            color: 0xffa500  // Sárga szín (figyelmeztetés)
+          }]
+        }).catch(() => {});
+
+        return res.status(403).sendFile(page);  // A 24 órás tiltás fájl kiszolgálása, return biztosítja, hogy itt megálljon
+      }
+    }
+
+    // Ha az IP véglegesen le van tiltva a memóriából VAGY a JSON fájlból
+    if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) {
+      const permanentBannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
+      if (fs.existsSync(permanentBannedPage)) {
+        return res.status(403).sendFile(permanentBannedPage);  // A végleges tiltás fájl kiszolgálása, return biztosítja, hogy itt megálljon
+      }
+    }
+  }
+
+  next();  // Ha nem tiltott az IP, folytatja a kérés feldolgozását
+});
+
+
 // Memóriában tárolt véglegesen tiltott IP-k
 let permanentBannedIPs = [];
 
