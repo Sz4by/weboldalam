@@ -64,7 +64,8 @@ const volumeBtn = document.getElementById("volumeBtn");
 const volumeSliderWrap = document.getElementById("volumeSliderWrap");
 
 volumeBtn.addEventListener("click", function () {
-  volumeSliderWrap.classList.toggle("active");  // Az 'active' osztály hozzáadása/eltávolítása
+  // Az 'active' osztály hozzáadása/eltávolítása
+  volumeSliderWrap.classList.toggle("active");
 });
 
 
