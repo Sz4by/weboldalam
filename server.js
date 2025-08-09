@@ -510,3 +510,22 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
+/* =========================
+   Statikus fájlok
+   ========================= */
+app.use(express.static(path.join(__dirname, 'public')));
+
+/* =========================
+   Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
+   ========================= */
+app.get('/', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
+  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
+});
+
+/* =========================
+   404
+   ========================= */
+app.use((req, res) => res.status(404).send('404 Not Found'));
+
+app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
