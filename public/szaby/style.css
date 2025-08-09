@@ -45,43 +45,6 @@ html, body {
   position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
   pointer-events: none; z-index: 1;
 }
-/* Modal stílusok */
-#blockModal {
-  display: none; /* Alapértelmezetten rejtve */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Átlátszó háttér */
-  justify-content: center;
-  align-items: center;
-  z-index: 10; /* Legyen felül minden más elem fölött */
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  max-width: 400px;
-  margin: auto;
-  color: #333;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #56e0f8;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45c7d8;
-}
-
 .main-flex {
   display: flex;
   flex-direction: row;
@@ -484,4 +447,54 @@ button:hover {
   color: #b7faff;
   text-align: left;
   font-style: italic;
+}
+/* Modal stílusok */
+#blockModal {
+  display: none; /* Alapértelmezetten rejtve */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85); /* Sötétebb fekete háttér */
+  justify-content: center;
+  align-items: center;
+  z-index: 10; /* Legyen felül minden más elem fölött */
+}
+
+.modal-content {
+  background-color: rgba(0, 0, 0, 0.9); /* Még sötétebb modal háttér */
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 400px;
+  margin: auto;
+  color: #fff; /* Fehér szöveg */
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #333; /* Sötét háttér */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #555; /* Sötétebb árnyalat */
+}
+
+/* Háttér sötétítése a videóval */
+.bg-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 0;
+  filter: brightness(0.4) blur(4px); /* Sötét háttér */
+  opacity: 0.9;  /* Növeld a sötétséget */
+  pointer-events: none;
 }
