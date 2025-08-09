@@ -47,6 +47,19 @@ const currentTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
 const musicCover = document.getElementById('musicCover');
 
+// Várj, amíg az oldal teljesen betöltődik
+document.addEventListener('DOMContentLoaded', () => {
+    // Modal megjelenítése az oldal betöltődése után
+    document.getElementById("blockModal").style.display = "flex"; // Modal megjelenítése
+
+    // Elfogadom gombra kattintás
+    document.getElementById("acceptBtn").onclick = function() {
+        document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
+        document.getElementById("audio").play(); // Zene elindítása
+    };
+});
+
+
 function loadSong(idx, autoPlay = false) {
   audio.src = playlist[idx].src;
   musicTitle.textContent = playlist[idx].title;
