@@ -339,11 +339,13 @@ app.get('/admin', (req, res) => {
     <input name="ip" placeholder="1.2.3.4" required>
     <div class="row">
       <button type="submit" data-action="ban">IP BAN 24h</button>
-      <button type="submit" data-action="unban">IP UNBAN</button>
-      <button type="submit" data-action="permanent-ban">IP VÉGLEGES BAN</button> <!-- Végleges tiltás gomb -->
+      <button type="submit" data-action="unban">IP UNBAN 24h</button>
+      <button type="submit" data-action="permanent-ban">IP VÉGLEGES BAN</button>
+      <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> <!-- Végleges tiltás feloldása -->
     </div>
   </form>
   <div class="msg" id="msg"></div>
+  
   <script>
     const form = document.getElementById('adminForm');
     const msg = document.getElementById('msg');
@@ -355,7 +357,8 @@ app.get('/admin', (req, res) => {
       const body = new URLSearchParams();
       for (const [k,v] of fd) body.append(k,v);
       const url = action === 'ban' ? '/admin/ban/form' :
-        action === 'unban' ? '/admin/unban/form' : '/admin/permanent-ban/form';
+        action === 'unban' ? '/admin/unban/form' :
+        action === 'permanent-ban' ? '/admin/permanent-ban/form' : '/admin/permanent-unban/form';
       const r = await fetch(url, {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
@@ -370,7 +373,7 @@ app.get('/admin', (req, res) => {
 });
 
 // =========================
-// Admin – BAN/UNBAN (HTML form, szerver oldali jelszóval)
+// 24 órás tiltás (IP BAN 24h)
 // =========================
 app.post('/admin/ban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
@@ -381,6 +384,9 @@ app.post('/admin/ban/form', express.urlencoded({ extended: true }), (req, res) =
   res.send(`✅ IP ${targetIp} tiltva lett 24 órára.`);
 });
 
+// =========================
+// 24 órás feloldás (IP UNBAN)
+// =========================
 app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -393,9 +399,6 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
     return res.status(404).send('❌ Ez az IP nincs tiltva.');
   }
 });
-
-// Memóriában tárolt véglegesen tiltott IP-k
-let permanentBannedIPs = [];
 
 // =========================
 // Végleges tiltás (IP permanent-ban)
@@ -456,7 +459,7 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
 });
 
 // =========================
-// Végleges IP feloldás
+// Végleges feloldás (IP permanent-unban)
 // =========================
 app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
@@ -488,14 +491,6 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
             color: 0x00ff00
           }]
         }).catch(() => {});
-
-        // Ha az IP feloldása megtörtént, akkor nyisd meg a "banned-permanent.html"-t
-        const unbannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
-        if (fs.existsSync(unbannedPage)) {
-          return res.status(200).sendFile(unbannedPage); // közvetlen fájl
-        } else {
-          return res.status(200).send('Az IP véglegesen feloldva lett.');
-        }
       });
     } else {
       return res.status(404).send('❌ Ez az IP nincs a végleges tiltott listában.');
