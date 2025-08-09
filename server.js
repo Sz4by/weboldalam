@@ -417,13 +417,12 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
     let bannedList;
     try {
       bannedList = JSON.parse(data);
+      // Ellenőrizzük, hogy a bannedList tömb típusú-e
+      if (!Array.isArray(bannedList)) {
+        bannedList = [];  // Ha nem tömb, állítsuk be üres tömbre
+      }
     } catch (parseError) {
       return res.status(500).send('A JSON fájl nem formázott helyesen.');
-    }
-
-    // Ellenőrizzük, hogy a bannedList tömb típusú-e
-    if (!Array.isArray(bannedList)) {
-      return res.status(500).send('A tiltott IP lista nem egy tömb.');
     }
 
     bannedList.push(targetIp);  // IP hozzáadása a fájlhoz
@@ -446,9 +445,9 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   });
 });
 
-/* =========================
+// =========================
 // Végleges IP feloldás
-// ========================= */
+// =========================
 app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), (req, res) => {
   const { password, ip } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) return res.status(401).send('Hibás admin jelszó.');
@@ -460,7 +459,7 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
   fs.readFile('banned-permanent-ips.json', 'utf8', (err, data) => {
     if (err) return res.status(500).send('Hiba történt a lista olvasásakor.');
 
-    const bannedList = JSON.parse(data);
+    let bannedList = JSON.parse(data);
     const index = bannedList.indexOf(targetIp);
     if (index > -1) {
       bannedList.splice(index, 1);  // IP törlés a fájlból
@@ -487,8 +486,8 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
 });
 
 /* =========================
-   Rossz kombináció figyelő
-   ========================= */
+// Rossz kombináció figyelő
+// ========================= */
 app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body || {};
@@ -521,7 +520,7 @@ app.post('/report', express.json(), async (req, res) => {
 
   res.json({ ok: true });
 });
-
+    
 /* =========================
    Statikus fájlok
    ========================= */
