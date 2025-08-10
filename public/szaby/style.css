@@ -23,6 +23,7 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* --- új rész: mobilon engedjük a görgetést --- */
 @media (max-width: 768px) {
   html, body {
     overflow-y: auto;
@@ -43,8 +44,13 @@ html, body {
 }
 
 #snow {
-  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
-  pointer-events: none; z-index: 1;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .main-flex {
@@ -437,4 +443,68 @@ button:hover {
   filter: brightness(0.4) blur(4px); /* Sötét háttér */
   opacity: 0.9;  /* Növeld a sötétséget */
   pointer-events: none;
+}
+
+/* Hangerő szabályozó */
+.volume-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.volume-btn {
+  background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px #56e0f855;
+  font-size: 1.18em;
+  color: #232d34;
+  cursor: pointer;
+  outline: none;
+}
+
+.volume-btn:active {
+  background: #1f374b44;
+}
+
+.volume-slider-wrap {
+  display: none;
+  position: absolute;
+  top: 44px;
+  right: 8px;
+  background: rgba(34, 45, 52, 0.95);
+  border-radius: 13px;
+  padding: 12px 6px;
+  box-shadow: 0 0 20px #56e0f877;
+  z-index: 6;
+}
+
+.volume-container.active .volume-slider-wrap {
+  display: flex;
+  animation: appear 0.19s;
+}
+
+.volume-slider {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  width: 26px;
+  height: 110px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
+  accent-color: #56e0f8;
+  outline: none;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
