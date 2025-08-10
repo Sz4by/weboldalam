@@ -454,7 +454,6 @@ button:hover {
   pointer-events: none;
 }
 
-/* Hangerő szabályozó */
 .volume-container {
   position: absolute;
   top: 10px; /* A kártya tetejére igazítjuk */
@@ -485,7 +484,6 @@ button:hover {
   background: #1f374b44;
 }
 
-/* A csúszka alapból rejtve van, csak akkor jelenik meg, ha az active osztály hozzá van adva */
 .volume-slider-wrap {
   display: none; /* Alapértelmezetten rejtve */
   position: absolute;
