@@ -292,12 +292,12 @@ html, body {
 
 
 
-/* Hangerő gomb */
+/* A hangerő gomb és a csúszka */
 .volume-container {
   position: absolute;
-  top: 16px;
-  right: 20px;
-  z-index: 2;
+  top: 16px; /* Felül */
+  right: 20px; /* Jobb oldalon */
+  z-index: 2; /* Hogy ne takarja semmi */
 }
 
 .volume-btn {
@@ -316,27 +316,16 @@ html, body {
   outline: none;
 }
 
-/* A csúszka alapértelmezetten rejtve van, csak akkor jelenik meg, ha az active osztály hozzá van adva */
 .volume-slider-wrap {
-  display: none; /* Alapértelmezetten rejtve */
+  display: flex; /* Mindig látható */
   position: absolute;
-  top: 44px; 
+  top: 44px; /* A csúszka közvetlenül alatta */
   right: 8px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
   padding: 12px 6px;
   box-shadow: 0 0 20px #56e0f877;
   z-index: 6;
-}
-
-.volume-container.active .volume-slider-wrap {
-  display: flex; /* Megjeleníti a csúszkát */
-  animation: appear 0.19s;
-}
-
-@keyframes appear {
-  from { opacity: 0; transform: translateY(16px);}
-  to   { opacity: 1; transform: none;}
 }
 
 .volume-slider {
