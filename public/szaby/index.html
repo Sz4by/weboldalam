@@ -14,12 +14,12 @@
 </head>
 <body>
   <!-- Modal ablak -->
-<div id="blockModal" class="modal">
+  <div id="blockModal" class="modal">
     <div class="modal-content">
-        <p>Ne használj Ctrl+S vagy jobb kattintásokat ezen az oldalon!</p>
-        <button id="acceptBtn">Elfogadom</button>
+      <p>Ne használj Ctrl+S vagy jobb kattintásokat ezen az oldalon!</p>
+      <button id="acceptBtn">Elfogadom</button>
     </div>
-</div>
+  </div>
 
   <video class="bg-video" src="https://files.catbox.moe/grak0f.mp4" autoplay loop muted playsinline></video>
   <canvas id="snow"></canvas>
@@ -59,6 +59,14 @@
           <span id="duration">-0:00</span>
         </div>
         <audio id="audio" preload="metadata"></audio>
+        
+        <!-- Volume control -->
+        <div class="volume-container" id="volumeContainer">
+          <button id="volumeBtn" class="volume-btn"><i class="fas fa-volume-up"></i></button>
+          <div class="volume-slider-wrap" id="volumeSliderWrap">
+            <input type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider" class="volume-slider" orient="vertical" />
+          </div>
+        </div>
       </div>
       <div class="discord-status-card" id="discordStatus">
         <div class="discord-status-left-right">
