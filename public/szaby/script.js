@@ -46,6 +46,9 @@ const currentTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
 const musicCover = document.getElementById('musicCover');
 
+// Kezdeti hangerő beállítása, ha a zene elindul
+audio.volume = 0.2; // 20% hangerő
+
 // Várj, amíg az oldal teljesen betöltődik
 document.addEventListener('DOMContentLoaded', () => {
     // Modal megjelenítése az oldal betöltődése után
@@ -56,9 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
         document.getElementById("audio").play(); // Zene elindítása
     };
-
-    // Kezdeti hangerő beállítása
-    audio.volume = 0.2; // 20% hangerőre állítjuk
 });
 
 // Kezdeti hangerő beállítása
@@ -163,10 +163,6 @@ progressBar.onclick = function (e) {
 loadSong(current);
 
 // ---- DISCORD STATUS FROM RENDER API ----
-// [Változatlanul hagyva]
-
-
-// ---- DISCORD STATUS FROM RENDER API ----
 async function fetchDiscordStatus() {
   try {
     const response = await fetch('https://antilink.onrender.com/api/status');
@@ -216,4 +212,20 @@ function updateDiscordStatus(data) {
   let statusText = statusMap[discord_status] || 'Ismeretlen státusz';
 
   if (activities && activities.length > 0) {
-    const
+    const customStatus = activities.find(a => a.type === 4);
+    if (customStatus && customStatus.state) {
+      statusText = customStatus.state;
+    }
+  }
+
+  const statusElem = document.getElementById('discordStatusText');
+  const stateElem = document.getElementById('discordState');
+
+  statusElem.textContent = statusText;
+  stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
+  stateElem.className = `discord-status-state ${discord_status}`;
+}
+
+// Frissítés 15 másodpercenként
+setInterval(fetchDiscordStatus, 15000);
+fetchDiscordStatus();
