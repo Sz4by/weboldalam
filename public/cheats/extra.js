@@ -4,7 +4,28 @@ function isMobileDevice() {
 }
 
 // Ha mobil eszközt használunk, ne indítsuk el a DevTools érzékelését, de ha mégis kell, akkor figyeljük
-if (!isMobileDevice() || (isMobileDevice() && window.innerWidth <= 800)) {
+if (isMobileDevice()) {
+    let devtoolsOpen = false;
+
+    const devtoolsCheck = setInterval(() => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        // Mobil eszközön figyeljük, hogy a képernyőméret csökkent-e
+        // Ha a képernyő szélessége 800px alá csökken, akkor valószínűleg DevTools nyílt meg
+        if (width <= 800 && !devtoolsOpen) {
+            devtoolsOpen = true;
+            window.location.href = 'https://www.example.com';  // Itt add meg az átirányítási URL-t
+            reportBadActivity('DevTools nyitva mobil eszközön');
+        }
+        // Ha a képernyőméret visszaváltozik, akkor a DevTools zárva van
+        else if (width > 800 && devtoolsOpen) {
+            devtoolsOpen = false;
+        }
+    }, 1000);
+
+} else {
+    // Asztali eszközön továbbra is működik a DevTools érzékelés
     // Ne engedj jobb kattintást
     document.addEventListener('contextmenu', (e) => {
         e.preventDefault();  // Megakadályozza a jobb kattintás menüt
@@ -104,3 +125,9 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
+
+// Modal és zene lejátszása (Elfogadom gombra kattintás)
+document.getElementById("acceptBtn").onclick = function() {
+    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
+    document.getElementById("audio").play(); // Zene elindítása
+};
