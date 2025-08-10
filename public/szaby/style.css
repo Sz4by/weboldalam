@@ -7,7 +7,6 @@
   --music-accent: #56e0f8;
   --status-accent: #67e2f5;
 }
-
 body {
   margin: 0;
   background: #161a1e;
@@ -16,7 +15,6 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
 }
-
 html, body {
   height: 100%;
   overflow: hidden;
@@ -44,15 +42,9 @@ html, body {
 }
 
 #snow {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 1;
+  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 1;
 }
-
 .main-flex {
   display: flex;
   flex-direction: row;
@@ -64,7 +56,6 @@ html, body {
   width: 100%;
   flex-wrap: wrap;
 }
-
 .profile-card {
   background: var(--glass-bg);
   border-radius: 1.5rem;
@@ -83,7 +74,6 @@ html, body {
   height: 532px;
   box-sizing: border-box;
 }
-
 .right-column {
   display: flex;
   flex-direction: column;
@@ -93,7 +83,6 @@ html, body {
   width: 100%;
   gap: 2rem;
 }
-
 .music-card {
   background: var(--glass-bg);
   border-radius: 1.5rem;
@@ -111,7 +100,6 @@ html, body {
   box-sizing: border-box;
   position: relative;
 }
-
 .music-cover {
   width: 90px;
   height: 90px;
@@ -125,12 +113,10 @@ html, body {
   display: block;
   transition: box-shadow 0.22s, filter 0.24s;
 }
-
 .music-cover.playing {
   animation: music-glow 1.6s infinite alternate;
   filter: brightness(1.14) saturate(1.16);
 }
-
 @keyframes music-glow {
   from {
     box-shadow: 0 0 16px 6px #42e2ff77, 0 0 26px #67e2f544, 0 4px 18px #67e2f522;
@@ -139,12 +125,10 @@ html, body {
     box-shadow: 0 0 40px 16px #8be8f7cc, 0 0 54px #67e2f5aa, 0 8px 32px #5ae2f577;
   }
 }
-
 .music-title {
   margin-top: 0.2em;
   color: var(--primary);
 }
-
 .music-controls {
   display: flex;
   flex-direction: row;
@@ -154,7 +138,6 @@ html, body {
   margin-bottom: 1.7em;
   margin-top: 0.7em;
 }
-
 .player-btn {
   background: linear-gradient(90deg, #fff 70%, #56e0f8 100%);
   border: none;
@@ -169,13 +152,11 @@ html, body {
   justify-content: center;
   cursor: pointer;
   outline: none;
-  transition: background 0.14s, box-shadow 0.18s;
+  transition: background .14s, box-shadow .18s;
 }
-
 .player-btn:active {
   background: #d5fafd;
 }
-
 .progress-bar {
   width: 95%;
   height: 7px;
@@ -188,25 +169,22 @@ html, body {
   overflow: hidden;
   box-shadow: 0 0 6px #56e0f877;
 }
-
 .progress {
   height: 100%;
   background: linear-gradient(90deg, #56e0f8 40%, #a8f3ff 100%);
   border-radius: 4px;
   width: 0;
-  transition: width 0.15s;
+  transition: width .15s;
 }
-
 .music-times {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 0.88em;
+  font-size: .88em;
   color: var(--primary);
-  margin-bottom: 0.1em;
+  margin-bottom: .1em;
   font-family: 'Orbitron', monospace;
 }
-
 .discord-status-card {
   position: relative;
   background: var(--glass-bg);
@@ -222,17 +200,15 @@ html, body {
   flex-direction: column;
   gap: 1rem;
 }
-
 .profile-visualizer {
   position: relative;
   width: 110px;
   height: 110px;
   margin-bottom: 4px;
 }
-
 .profile-img {
-  width: 104px;
-  height: 104px;
+  width: 90px;  /* Discord profilkép méretének csökkentése */
+  height: 90px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--primary);
@@ -246,7 +222,6 @@ html, body {
   overflow: hidden;
   background: #131d25;
 }
-
 #audioViz {
   position: absolute;
   left: 0;
@@ -256,7 +231,6 @@ html, body {
   z-index: 1;
   pointer-events: none;
 }
-
 .displayname {
   font-family: 'Orbitron', monospace;
   font-size: 2rem;
@@ -266,7 +240,6 @@ html, body {
   font-weight: 700;
   margin: 0;
 }
-
 .bio-desc {
   margin-top: 0.2rem;
   color: var(--primary);
@@ -277,7 +250,6 @@ html, body {
   font-weight: 400;
   text-shadow: 0 2px 10px #00f7ff33;
 }
-
 .bio-links {
   display: flex;
   gap: 1.3rem;
@@ -285,7 +257,6 @@ html, body {
   justify-content: center;
   flex-wrap: wrap;
 }
-
 .bio-link {
   display: grid;
   place-items: center;
@@ -299,58 +270,47 @@ html, body {
   overflow: hidden;
   transition: all 0.3s;
 }
-
 .bio-link img {
   width: 63%;
   min-width: 19px;
   filter: brightness(1) drop-shadow(0 0 4px var(--primary));
   transition: filter 0.3s;
 }
-
 .bio-link:hover {
   background: #222;
 }
-
 .bio-link:hover img {
   filter: brightness(1.25) drop-shadow(0 0 6px var(--primary));
 }
-
 .bio-link[href*="discord.com"]:hover {
   background: #5865F2 !important;
 }
-
 .bio-link[href*="instagram.com"]:hover {
   background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important;
 }
-
 .bio-link[href*="spotify.com"]:hover {
   background: #1DB954 !important;
 }
-
 .bio-link[href*="youtube.com"]:hover {
   background: #FF0000 !important;
 }
-
 .bio-link[href*="tiktok.com"]:hover {
   background: linear-gradient(135deg, #69C9D0 0%, #EE1D52 100%) !important;
 }
-
 .discord-status-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
 }
-
 .discord-status-status {
-  margin-top: 0.12em;
-  font-size: 0.96em;
+  margin-top: .12em;
+  font-size: .96em;
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: .03em;
   color: var(--primary);
   text-align: center;
 }
-
 .discord-status-state {
   margin-top: 0.18em;
   font-size: 0.99em;
@@ -365,27 +325,22 @@ html, body {
   box-shadow: 0 0 7px #67e2f544;
   letter-spacing: 0.02em;
 }
-
 .discord-status-state.offline {
   background: linear-gradient(90deg, #35373d 60%, #45545a 100%);
   color: #c5c5c5;
 }
-
 .discord-status-state.online {
   background: linear-gradient(90deg, #0effac 20%, #4fffc1 100%);
   color: #222;
 }
-
 .discord-status-state.dnd {
   background: linear-gradient(90deg, #ff3b3f 30%, #fa8d8f 100%);
   color: #fff;
 }
-
 .discord-status-state.idle {
   background: linear-gradient(90deg, #ffae42 20%, #ffe2b2 100%);
   color: #653d00;
 }
-
 .discord-status-custom-text {
   font-size: 0.95em;
   font-weight: 500;
