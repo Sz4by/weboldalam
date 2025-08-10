@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SzabySeller</title>
     <link rel="stylesheet" href="../style.css">
+
+    <!-- Ha JavaScript ki van kapcsolva, automatikusan átirányít -->
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://www.example.com">
+        <!-- Ez az átirányítás történik, ha a JavaScript ki van kapcsolva -->
+    </noscript>
+
 </head>
 <body>
     <!-- Fejléc -->
@@ -57,20 +64,6 @@
 
     <!-- Sötét/Világos mód kapcsoló gomb -->
     <button onclick="toggleTheme()" class="mode-toggle">🌙/☀️</button>
-
-    <!-- Noscript üzenet - Ha a JavaScript ki van kapcsolva -->
-    <noscript>
-        <div style="color: red; font-size: 20px; font-weight: bold;">
-            A JavaScript ki van kapcsolva a böngésződben! Kérlek, engedélyezd a JavaScriptet.
-        </div>
-    </noscript>
-
-    <!-- Automatikus átirányítás JavaScript nélkül -->
-    <script>
-        if (!navigator.javaEnabled()) {
-            window.location.replace("https://www.example.com");  // Automatikus átirányítás másik oldalra
-        }
-    </script>
 
     <!-- JavaScript -->
     <script src="../script.js"></script>
