@@ -292,7 +292,7 @@ html, body {
 
 
 
-/* Kezdeti beállítások a hangerő szabályozóhoz */
+/* Hangerő gomb */
 .volume-container {
   position: absolute;
   top: 16px;
@@ -300,7 +300,6 @@ html, body {
   z-index: 2;
 }
 
-/* A hangerő gomb beállításai */
 .volume-btn {
   background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
   border: none;
@@ -317,11 +316,11 @@ html, body {
   outline: none;
 }
 
-/* Hangerő csúszka rejtése alapértelmezetten */
+/* A csúszka alapértelmezetten rejtve van, csak akkor jelenik meg, ha az active osztály hozzá van adva */
 .volume-slider-wrap {
   display: none; /* Alapértelmezetten rejtve */
   position: absolute;
-  top: 44px;
+  top: 44px; 
   right: 8px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
@@ -330,7 +329,16 @@ html, body {
   z-index: 6;
 }
 
-/* Csúszka beállításai */
+.volume-container.active .volume-slider-wrap {
+  display: flex; /* Megjeleníti a csúszkát */
+  animation: appear 0.19s;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(16px);}
+  to   { opacity: 1; transform: none;}
+}
+
 .volume-slider {
   writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
@@ -340,24 +348,6 @@ html, body {
   background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
   accent-color: #56e0f8;
   outline: none;
-}
-
-/* Amikor a hangerő gombra kattintunk, megjelenik a csúszka */
-.volume-container.active .volume-slider-wrap {
-  display: flex; /* Megjeleníti a csúszkát */
-  animation: appear .19s;
-}
-
-/* Animáció a csúszka megjelenéséhez */
-@keyframes appear {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 
