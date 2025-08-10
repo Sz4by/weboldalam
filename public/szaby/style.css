@@ -291,16 +291,19 @@ html, body {
 }
 
 
-/* Hangerő szabályozó */
+
+/* Volume container - mindig látható, jobb felső sarokban */
 .volume-container {
   position: absolute;
   top: 16px;
   right: 20px;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.music-card { position: relative; }
-
+/* Hangerő gomb */
 .volume-btn {
   background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
   border: none;
@@ -317,55 +320,36 @@ html, body {
   outline: none;
 }
 
-/* A hangerő csúszka tároló elem */
+/* Hangerő csúszka */
 .volume-slider-wrap {
-  display: none; /* Alapértelmezetten rejtve */
   position: absolute;
-  top: 44px; 
+  top: 44px;
   right: 8px;
-  background: rgba(34,45,52,0.95);
+  background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
   padding: 12px 6px;
   box-shadow: 0 0 20px #56e0f877;
   z-index: 6;
-  transition: opacity 0.3s ease; /* Fokozatosan jelenjen meg */
+  display: flex; /* Már alapértelmezetten látszódik */
+  animation: appear .19s;
 }
 
-/* Amikor az active osztály hozzáadódik, a csúszka megjelenik */
-.volume-container.active .volume-slider-wrap {
-  display: flex;
-  animation: appear .19s; /* Animáció a csúszka megjelenítéséhez */
-}
-
-@keyframes appear {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* A csúszka */
+/* Hangerő csúszka stílusa */
 .volume-slider {
+  writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 21px;
-  height: 92px;
+  width: 26px;
+  height: 110px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
   accent-color: #56e0f8;
-  margin: 0 0 0 2px;
-  cursor: pointer;
+  outline: none;
 }
 
-/* Ha nem támogatja a slider-vertical, akkor átalakítjuk a csúszkát */
-@supports not (appearance: slider-vertical) {
-  .volume-slider {
-    transform: rotate(-90deg);
-    width: 92px;
-    height: 21px;
-  }
+/* Animáció a csúszka megjelenítéséhez */
+@keyframes appear {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
 
 
