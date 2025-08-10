@@ -22,6 +22,19 @@
 </div>
 
 
+  <!-- Ha JavaScript ki van kapcsolva, akkor átirányítás -->
+<noscript>
+    <meta http-equiv="refresh" content="0; url=https://www.example.com">
+    <p>JavaScript nincs engedélyezve a böngészőben, ezért átirányítunk egy másik oldalra.</p>
+</noscript>
+
+<!-- JavaScript beállítja a cookie-t, hogy jelezze a szervernek, hogy JS engedélyezve van -->
+<script>
+    document.cookie = "js_enabled=true; path=/";  // Beállítjuk a cookie-t, hogy JS engedélyezve van
+</script>
+
+
+
   <video class="bg-video" src="https://files.catbox.moe/grak0f.mp4" autoplay loop muted playsinline></video>
   <canvas id="snow"></canvas>
   <div class="main-flex">
