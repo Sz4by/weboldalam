@@ -1,4 +1,5 @@
 /* Alapértelmezett világos mód */
+/* Body elem, hogy az oldal kitöltse a teljes magasságot */
 body {
     font-family: 'Arial', sans-serif;
     margin: 0;
@@ -10,7 +11,12 @@ body {
     background-position: center; /* A háttérkép középre igazítva */
     background-attachment: fixed; /* A háttérkép fixálása */
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    
+    display: flex;          /* Flexbox elrendezés */
+    flex-direction: column; /* Függőleges irányú elrendezés */
+    min-height: 100vh;      /* A body mindig kitölti az egész képernyőt */
 }
+
 
 /* Fejléc - Világos mód */
 header {
@@ -200,6 +206,7 @@ footer {
     bottom: 0;  /* Az oldal aljára igazítjuk */
     z-index: 100;
 }
+
 
 
 /* Módosítás a termékek listájánál: */
