@@ -517,4 +517,4 @@ button:hover {
 @keyframes appear {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
-}
+  }
