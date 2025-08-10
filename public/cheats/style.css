@@ -195,10 +195,12 @@ footer {
     padding: 15px 0;
     font-size: 14px;
     width: 100%;
-    bottom: 0;
+    margin-top: auto;  /* A lábléc az oldal alján helyezkedik el */
+    position: relative;  /* A lábléc pozícióját beállítjuk */
+    bottom: 0;  /* Az oldal aljára igazítjuk */
     z-index: 100;
-    margin-top: 50px; /* Helyet adunk a láblécnek */
 }
+
 
 /* Módosítás a termékek listájánál: */
 main {
