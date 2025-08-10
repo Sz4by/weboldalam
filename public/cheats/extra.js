@@ -3,8 +3,8 @@ function isMobileDevice() {
     return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
 }
 
-// Ha mobil eszközt használunk, ne indítsuk el a DevTools érzékelését
-if (!isMobileDevice()) {
+// Ha mobil eszközt használunk, ne indítsuk el a DevTools érzékelését, de ha mégis kell, akkor figyeljük
+if (!isMobileDevice() || (isMobileDevice() && window.innerWidth <= 800)) {
     // Ne engedj jobb kattintást
     document.addEventListener('contextmenu', (e) => {
         e.preventDefault();  // Megakadályozza a jobb kattintás menüt
@@ -104,9 +104,3 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
-
-// Modal és zene lejátszása (Elfogadom gombra kattintás)
-document.getElementById("acceptBtn").onclick = function() {
-    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
-    document.getElementById("audio").play(); // Zene elindítása
-};
