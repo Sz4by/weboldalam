@@ -59,13 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// JavaScript: Volume control
+// Kezdeti hangerő beállítása
 const volumeBtn = document.getElementById('volumeBtn'); // Hangerő gomb
 const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hangerő csúszka
 const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
 
 // Kezdeti hangerő beállítása
-const audio = document.getElementById('audio');
 audio.volume = volumeSlider.value;
 
 // Hangerő szabályozó megjelenítése
@@ -77,6 +76,7 @@ volumeBtn.addEventListener('click', () => {
 volumeSlider.addEventListener('input', () => {
     audio.volume = volumeSlider.value;
 });
+
 
 
 function loadSong(idx, autoPlay = false) {
