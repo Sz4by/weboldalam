@@ -241,9 +241,6 @@ html, body {
   filter: brightness(1) drop-shadow(0 0 4px var(--primary));
   transition: filter 0.3s;
 }
-.bio-link:hover {
-  background: #222;
-}
 .bio-link:hover img {
   filter: brightness(1.25) drop-shadow(0 0 6px var(--primary));
 }
