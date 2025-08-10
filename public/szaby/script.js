@@ -67,7 +67,8 @@ const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hanger�
 const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
 
 // Kezdeti hangerő beállítása
-audio.volume = volumeSlider.value;
+audio.volume = 0.2;  // 20%-ra állítja a hangerőt
+volumeSlider.value = 0.2;  // A csúszka értéke is 20%-ra van állítva
 
 // Hangerő szabályozó megjelenítése
 volumeBtn.addEventListener('click', () => {
