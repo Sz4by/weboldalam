@@ -59,22 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// Hangerő gomb és csúszka kezelése
-const volumeBtn = document.getElementById("volumeBtn");
-const volumeSliderWrap = document.getElementById("volumeSliderWrap");
-
-// Ha rákattintanak a hangerő gombra, megjelenítjük/eltüntetjük a csúszkát
-volumeBtn.addEventListener("click", function () {
-  volumeSliderWrap.classList.toggle("active");  // Az 'active' osztály hozzáadása/eltávolítása
-});
-
-// Hangerő beállítása a csúszka értékével
-const volumeSlider = document.getElementById("volumeSlider");
-
-volumeSlider.addEventListener("input", function () {
-  audio.volume = 0.1;  // A hangerő 30%-ra lesz beállítva (alkalmazd itt, amikor elindítod a zenét)
-});
-
 
 
 function loadSong(idx, autoPlay = false) {
