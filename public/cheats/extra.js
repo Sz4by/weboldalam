@@ -1,42 +1,76 @@
-<script>
-    // Blokkolja a jobb kattintást
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();  // Megakadályozza a jobb kattintást
-        alert("A jobb kattintás le van tiltva ezen az oldalon.");
-    });
+// Ne engedj jobb kattintást
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();  // Megakadályozza a jobb kattintás menüt
+    reportBadActivity('Jobb kattintás blokkolva');
+});
 
-    // Blokkolja a Ctrl+S, Ctrl+U és más fejlesztői eszközökhöz kapcsolódó billentyűparancsokat
-    document.addEventListener('keydown', function(e) {
-        // Ctrl+S (mentés) és Ctrl+U (forráskód megtekintése)
-        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
-            e.preventDefault(); // Megakadályozza a billentyűparancsokat
-            alert("Ez a billentyűparancs le van tiltva.");
-        }
-        
-        // DevTools megnyitás blokkolása (F12, Ctrl+Shift+I, Ctrl+Shift+J)
-        if ((e.key === 'F12') || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J'))) {
-            e.preventDefault(); // Megakadályozza a DevTools megnyitást
-            alert("A fejlesztői eszközök megnyitása le van tiltva.");
-        }
-    });
+// Ne engedj Ctrl+U, Ctrl+Shift+I, F12 és egyéb kombinációkat
+document.addEventListener('keydown', (e) => {
+    // Ctrl+U (forrás megtekintés)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+U kombináció blokkolva');
+    }
 
-    // Blokkolja a fejlesztői eszközök hozzáférését, ha a felhasználó az F12 billentyűt nyomja
-    (function() {
-        let devtoolsOpen = false;
-        const threshold = 160;
-        const checkDevTools = () => {
-            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-            if (widthThreshold || heightThreshold) {
-                devtoolsOpen = true;
-                alert("A fejlesztői eszközök megnyitása le van tiltva.");
-                return true;
-            }
-            return false;
-        };
-        setInterval(checkDevTools, 1000);
-    })();
-</script>
+    // Ctrl+Shift+I (fejlesztői eszközök)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
+    }
+
+    // F12 (fejlesztői eszközök)
+    if (e.key === 'F12') {
+        e.preventDefault();
+        reportBadActivity('F12 billentyű blokkolva');
+    }
+
+    // Ctrl+Shift+J (fejlesztői eszközök konzol)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+J kombináció blokkolva');
+    }
+
+    // Ctrl+Shift+K (másik fejlesztői konzol parancs)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'K') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+K kombináció blokkolva');
+    }
+
+    // Ctrl+Shift+M (munkamenet átváltás, DevTools)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+M kombináció blokkolva');
+    }
+
+    // Egyéb DevTools parancsok (Ctrl+Shift+L, Ctrl+Shift+S stb.)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['L', 'S', 'E'].includes(e.key)) {
+        e.preventDefault();
+        reportBadActivity(`Ctrl+Shift+${e.key} kombináció blokkolva`);
+    }
+
+    // Ne engedj semmilyen más fejlesztői kombinációt (pl. konzolok, debugger-ek)
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'I' || e.key === 'J' || e.key === 'K' || e.key === 'M' || e.key === 'U')) {
+        e.preventDefault();
+        reportBadActivity('Fejlesztői eszközök blokkolva');
+    }
+});
+
+// Ellenőrzi, hogy a DevTools kinyílt-e
+let devtoolsOpen = false;
+const devtoolsCheck = setInterval(() => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    if (width <= 800 || height <= 600) {  // Ha a méret csökken, akkor valószínűleg DevTools van nyitva
+        if (!devtoolsOpen) {
+            devtoolsOpen = true;
+            window.location.href = 'https://www.example.com';  // Itt add meg az átirányítási URL-t
+            reportBadActivity('DevTools nyitva');
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
 
 // Rossz tevékenység logolása
 function reportBadActivity(reason) {
@@ -62,9 +96,3 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
-
-// Modal és zene lejátszása (Elfogadom gombra kattintás)
-document.getElementById("acceptBtn").onclick = function() {
-    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
-    document.getElementById("audio").play(); // Zene elindítása
-};
