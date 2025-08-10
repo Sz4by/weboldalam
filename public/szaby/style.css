@@ -298,6 +298,7 @@ html, body {
   right: 20px;
   z-index: 2;
 }
+
 .music-card { position: relative; }
 
 .volume-btn {
@@ -316,72 +317,24 @@ html, body {
   outline: none;
 }
 
+/* A hangerő csúszka tároló elem */
 .volume-slider-wrap {
-  display: none;
+  display: none; /* Alapértelmezetten rejtve */
   position: absolute;
-  top: 44px;
+  top: 44px; 
   right: 8px;
-  background: rgba(34, 45, 52, 0.95);
+  background: rgba(34,45,52,0.95);
   border-radius: 13px;
   padding: 12px 6px;
   box-shadow: 0 0 20px #56e0f877;
   z-index: 6;
+  transition: opacity 0.3s ease; /* Fokozatosan jelenjen meg */
 }
 
-.volume-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  width: 26px;
-  height: 110px;
-  border-radius: 9px;
-  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
-  accent-color: #56e0f8;
-  outline: none;
-}
-
-.volume-container {
-  position: absolute;
-  top: 18px;
-  right: 24px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.music-card {
-  position: relative;
-}
-
-.volume-btn {
-  background: rgba(20, 26, 30, 0.10);
-  border: none;
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: 1.13em;
-  color: #56e0f8;
-  box-shadow: 0 0 8px #56e0f855;
-  cursor: pointer;
-  transition: background 0.16s;
-}
-
-.volume-btn:active {
-  background: #1f374b44;
-}
-
-.volume-slider-wrap {
-  display: none;
-  background: #1f374bdd;
-  border-radius: 12px;
-  box-shadow: 0 0 13px #56e0f8aa;
-  padding: 12px 9px 12px 14px;
-  margin-top: 6px;
-  align-items: center;
-}
-
+/* Amikor az active osztály hozzáadódik, a csúszka megjelenik */
 .volume-container.active .volume-slider-wrap {
   display: flex;
-  animation: appear 0.19s;
+  animation: appear .19s; /* Animáció a csúszka megjelenítéséhez */
 }
 
 @keyframes appear {
@@ -389,13 +342,13 @@ html, body {
     opacity: 0;
     transform: translateY(16px);
   }
-
   to {
     opacity: 1;
     transform: none;
   }
 }
 
+/* A csúszka */
 .volume-slider {
   -webkit-appearance: slider-vertical;
   appearance: slider-vertical;
@@ -406,6 +359,7 @@ html, body {
   cursor: pointer;
 }
 
+/* Ha nem támogatja a slider-vertical, akkor átalakítjuk a csúszkát */
 @supports not (appearance: slider-vertical) {
   .volume-slider {
     transform: rotate(-90deg);
@@ -413,6 +367,7 @@ html, body {
     height: 21px;
   }
 }
+
 
 
 /* Discord státusz kártya módosítások */
