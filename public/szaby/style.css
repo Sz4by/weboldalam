@@ -238,7 +238,7 @@ html, body {
 .bio-link img {
   width: 63%;
   min-width: 19px;
-  filter: brightness(1) drop-shadow(0 0 4px var(--primary));
+  filter: filter: brightness(1) drop-shadow(0 0 4px #2b2b2b);
   transition: filter 0.3s;
 }
 .bio-link:hover {
