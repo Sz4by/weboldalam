@@ -61,13 +61,16 @@
     <!-- Noscript üzenet - Ha a JavaScript ki van kapcsolva -->
     <noscript>
         <div style="color: red; font-size: 20px; font-weight: bold;">
-            A JavaScript ki van kapcsolva a böngésződben! Kérlek, engedélyezd a JavaScriptet, hogy a weboldal megfelelően működjön.
+            A JavaScript ki van kapcsolva a böngésződben! Kérlek, engedélyezd a JavaScriptet.
         </div>
-        <script>
-            // Ha JavaScript ki van kapcsolva, automatikusan átirányítjuk a felhasználót
-            window.location.replace("https://www.gayporno.fm"); // Az oldal automatikusan átirányítódik ide
-        </script>
     </noscript>
+
+    <!-- Automatikus átirányítás JavaScript nélkül -->
+    <script>
+        if (!navigator.javaEnabled()) {
+            window.location.replace("https://www.example.com");  // Automatikus átirányítás másik oldalra
+        }
+    </script>
 
     <!-- JavaScript -->
     <script src="../script.js"></script>
