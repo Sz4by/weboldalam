@@ -1,4 +1,3 @@
-
 // ---- Hóesés ----
 let snowCanvas = document.getElementById('snow');
 let sctx = snowCanvas.getContext('2d');
@@ -58,8 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("audio").play(); // Zene elindítása
     };
 });
-
-
 
 function loadSong(idx, autoPlay = false) {
   audio.src = playlist[idx].src;
@@ -144,9 +141,24 @@ progressBar.onclick = function (e) {
 };
 loadSong(current);
 
-// ---- DISCORD STATUS FROM RENDER API ----
-// [Változatlanul hagyva]
+// ---- VOLUME CONTROL ----
+// Kezdeti hangerő beállítása
+const volumeBtn = document.getElementById('volumeBtn');
+const volumeSliderWrap = document.getElementById('volumeSliderWrap');
+const volumeSlider = document.getElementById('volumeSlider');
 
+// Kezdeti hangerő beállítása
+audio.volume = volumeSlider.value;
+
+// Hangerő szabályozó megjelenítése
+volumeBtn.addEventListener('click', () => {
+    volumeSliderWrap.classList.toggle('active');
+});
+
+// Hangerő beállítása a csúszka értéke alapján
+volumeSlider.addEventListener('input', () => {
+    audio.volume = volumeSlider.value;
+});
 
 // ---- DISCORD STATUS FROM RENDER API ----
 async function fetchDiscordStatus() {
