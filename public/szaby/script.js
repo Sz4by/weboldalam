@@ -211,21 +211,6 @@ function updateDiscordStatus(data) {
   stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
   stateElem.className = `discord-status-state ${discord_status}`;
 }
-// Hangerő gomb és csúszka kezelése
-const volumeBtn = document.getElementById("volumeBtn");
-const volumeSliderWrap = document.getElementById("volumeSliderWrap");
-
-// Ha rákattintanak a hangerő gombra, megjelenítjük/eltüntetjük a csúszkát
-volumeBtn.addEventListener("click", function () {
-  volumeSliderWrap.classList.toggle("active");  // Az 'active' osztály hozzáadása/eltávolítása
-});
-
-// Hangerő beállítása a csúszka értékével
-const volumeSlider = document.getElementById("volumeSlider");
-
-volumeSlider.addEventListener("input", function () {
-  audio.volume = volumeSlider.value;  // Hangerő beállítása a csúszka értékével
-});
 
 // Frissítés 15 másodpercenként
 setInterval(fetchDiscordStatus, 15000);
