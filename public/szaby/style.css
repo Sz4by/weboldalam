@@ -285,100 +285,13 @@ html, body {
   .main-flex { flex-direction: column; gap: 0; align-items: center; margin-top: 2.2rem;}
   .profile-card, .right-column, .music-card, .discord-status-card { min-width: unset; max-width: 97vw; width: 98vw;}
 }
+.music-card { position: relative; }
 
-.volume-container {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  z-index: 2;
-}
 .music-card { position: relative; }
-.volume-btn {
-  background: linear-gradient(90deg,#fff 60%,#56e0f8 100%);
-  border: none;
-  border-radius: 50%;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 12px #56e0f855;
-  font-size: 1.18em;
-  color: #232d34;
-  cursor: pointer;
-  outline: none;
-}
-.volume-slider-wrap {
-  display: none;
-  position: absolute;
-  top: 44px; right: 8px;
-  background: rgba(34,45,52,0.95);
-  border-radius: 13px;
-  padding: 12px 6px;
-  box-shadow: 0 0 20px #56e0f877;
-  z-index: 6;
-}
-.volume-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  width: 26px;
-  height: 110px;
-  border-radius: 9px;
-  background: linear-gradient(180deg,#56e0f8 0%,#232d34 100%);
-  accent-color: #56e0f8;
-  outline: none;
-}
-.volume-container {
-  position: absolute;
-  top: 18px;
-  right: 24px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;  
-}
-.music-card { position: relative; }
-.volume-btn {
-  background: rgba(20,26,30,0.10);
-  border: none;
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: 1.13em;
-  color: #56e0f8;
-  box-shadow: 0 0 8px #56e0f855;
-  cursor: pointer;
-  transition: background .16s;
-}
-.volume-btn:active { background: #1f374b44; }
-.volume-slider-wrap {
-  display: none;
-  background: #1f374bdd;
-  border-radius: 12px;
-  box-shadow: 0 0 13px #56e0f8aa;
-  padding: 12px 9px 12px 14px;
-  margin-top: 6px;
-  align-items: center;
-}
-.volume-container.active .volume-slider-wrap {
-  display: flex;
-  animation: appear .19s;
 }
 @keyframes appear {
   from { opacity: 0; transform: translateY(16px);}
   to   { opacity: 1; transform: none;}
-}
-.volume-slider {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 21px;
-  height: 92px;
-  accent-color: #56e0f8;
-  margin: 0 0 0 2px;
-  cursor: pointer;
-}
-@supports not (appearance: slider-vertical) {
-  .volume-slider {
-    transform: rotate(-90deg);
-    width: 92px;
-    height: 21px;
-  }
 }
 
 /* Discord státusz kártya módosítások */
