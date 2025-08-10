@@ -416,8 +416,8 @@ button:hover {
 /* Hangerő szabályozó */
 .volume-container {
   position: absolute;
-  top: 10px; /* A kártya tetejére igazítjuk */
-  right: 10px; /* A kártya jobb szélére */
+  top: 10px;
+  right: 10px;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -440,15 +440,10 @@ button:hover {
   outline: none;
 }
 
-.volume-btn:active {
-  background: #1f374b44;
-}
-
-/* A csúszka alapból rejtve van, csak akkor jelenik meg, ha az active osztály hozzá van adva */
 .volume-slider-wrap {
-  display: none; /* Alapértelmezetten rejtve */
+  display: none; 
   position: absolute;
-  top: 44px; /* A csúszka közvetlenül alatta */
+  top: 44px; 
   right: 8px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
@@ -458,7 +453,7 @@ button:hover {
 }
 
 .volume-container.active .volume-slider-wrap {
-  display: flex; /* Megjeleníti a csúszkát */
+  display: flex; 
   animation: appear 0.19s;
 }
 
