@@ -143,16 +143,16 @@ loadSong(current);
 
 // ---- VOLUME CONTROL ----
 // Kezdeti hangerő beállítása
-const volumeBtn = document.getElementById('volumeBtn');
-const volumeSliderWrap = document.getElementById('volumeSliderWrap');
-const volumeSlider = document.getElementById('volumeSlider');
+const volumeBtn = document.getElementById('volumeBtn'); // Hangerő gomb
+const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hangerő csúszka
+const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
 
 // Kezdeti hangerő beállítása
 audio.volume = volumeSlider.value;
 
 // Hangerő szabályozó megjelenítése
 volumeBtn.addEventListener('click', () => {
-    volumeSliderWrap.classList.toggle('active');
+    volumeSliderWrap.classList.toggle('active'); // Az active osztály hozzáadása a csúszkához
 });
 
 // Hangerő beállítása a csúszka értéke alapján
