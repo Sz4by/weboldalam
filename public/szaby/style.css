@@ -241,10 +241,13 @@ html, body {
   filter: brightness(1) drop-shadow(0 0 4px var(--primary));
   transition: filter 0.3s;
 }
+.bio-link:hover {
+  background: #222;
+}
 .bio-link:hover img {
   filter: brightness(1.25) drop-shadow(0 0 6px var(--primary));
 }
-.bio-link[href*="discord.com"]:hover { background: #5865F2 !important; }
+.bio-link[href*="discord.com"]:hover { background: radial-gradient(circle at 30% 110%, #155a9b 0%, #027cc4 5%, #0e4dd6 45%, #3220db 60%, #285AEB 90%) !important; }
 .bio-link[href*="instagram.com"]:hover { background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important; }
 .bio-link[href*="spotify.com"]:hover { background: #1DB954 !important; }
 .bio-link[href*="youtube.com"]:hover { background: #FF0000 !important; }
@@ -316,8 +319,8 @@ html, body {
 .volume-slider-wrap {
   display: flex; /* Mindig látható */
   position: absolute;
-  top: 44px; /* A csúszka közvetlenül alatta */
-  right: 8px;
+  top: 40px; /* A csúszka közvetlenül alatta */
+  right: -1px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
   padding: 12px 6px;
