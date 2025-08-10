@@ -30,7 +30,7 @@ function snow() {
 }
 snow();
 
-// ---- Zene lejátszó ----
+// ---- MODERN MUSIC PLAYER SCRIPT + Cover ----
 const playlist = [
   { src: '/szaby/music/1.mp3', title: 'Look at Me Now', cover: '/szaby/images/cover1.jpg' },
 ];
@@ -48,26 +48,28 @@ const musicCover = document.getElementById('musicCover');
 
 // Várj, amíg az oldal teljesen betöltődik
 document.addEventListener('DOMContentLoaded', () => {
+    // Modal megjelenítése az oldal betöltődése után
     document.getElementById("blockModal").style.display = "flex"; // Modal megjelenítése
+
+    // Elfogadom gombra kattintás
     document.getElementById("acceptBtn").onclick = function() {
         document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
         document.getElementById("audio").play(); // Zene elindítása
     };
 });
 
-// Zene betöltése és lejátszása
 function loadSong(idx, autoPlay = false) {
   audio.src = playlist[idx].src;
   musicTitle.textContent = playlist[idx].title;
   if (musicCover) {
     musicCover.src = playlist[idx].cover || 'images/default_cover.jpg';
-    musicCover.classList.remove('playing');
+    musicCover.classList.remove('playing'); // Az osztályt is hozzáadjuk a borítóképhez
   }
   playBtn.innerHTML = `<i class="fas fa-play"></i>`;
   if (autoPlay) audio.play();
 }
 
-// Zene betöltése alapértelmezetten
+// Zene betöltése de nem indul el automatikusan
 window.addEventListener('load', () => {
   loadSong(current, false); // false = ne induljon automatikusan
   audio.muted = false;      // ne legyen néma alapból
@@ -78,15 +80,16 @@ audio.addEventListener('ended', () => {
   if (musicCover) musicCover.classList.remove('playing');
 
   if (current < playlist.length - 1) {
+    // Ha van következő zene, folytatjuk azzal
     current++;
     loadSong(current, true);
   } else {
+    // Ha nincs több zene, újraindítjuk az elsőt
     current = 0;
     loadSong(current, true);
   }
 });
 
-// Play/Pause gomb funkció
 playBtn.onclick = function () {
   if (audio.paused) {
     audio.play();
@@ -97,36 +100,40 @@ playBtn.onclick = function () {
   }
 };
 
-// Előző zene
 prevBtn.onclick = function () {
   current = (current - 1 + playlist.length) % playlist.length;
   loadSong(current, true);
 };
 
-// Következő zene
 nextBtn.onclick = function () {
   current = (current + 1) % playlist.length;
   loadSong(current, true);
 };
 
-// Idő formázás
+audio.addEventListener('play', () => {
+  playBtn.innerHTML = `<i class="fas fa-pause"></i>`;
+  if (musicCover) musicCover.classList.add('playing');
+});
+
+audio.addEventListener('pause', () => {
+  playBtn.innerHTML = `<i class="fas fa-play"></i>`;
+  if (musicCover) musicCover.classList.remove('playing');
+});
+
 function formatTime(sec) {
   sec = Math.floor(sec);
   return `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, '0')}`;
 }
 
-// Idő frissítése
 audio.addEventListener('timeupdate', () => {
   currentTime.textContent = formatTime(audio.currentTime);
   progress.style.width = ((audio.currentTime / audio.duration) * 100 || 0) + '%';
 });
 
-// Idő és időtartam betöltése
 audio.addEventListener('loadedmetadata', () => {
   duration.textContent = '-' + formatTime(audio.duration);
 });
 
-// Kattintás a progress bar-ra
 progressBar.onclick = function (e) {
   const rect = progressBar.getBoundingClientRect();
   const pos = (e.clientX - rect.left) / rect.width;
@@ -134,25 +141,25 @@ progressBar.onclick = function (e) {
 };
 loadSong(current);
 
-// ---- VOLUME CONTROL ----
-const volumeBtn = document.getElementById('volumeBtn'); 
-const volumeSliderWrap = document.getElementById('volumeSliderWrap');
-const volumeSlider = document.getElementById('volumeSlider');
+// ---- Hangerő Szabályozó ----
+const volumeBtn = document.getElementById('volumeBtn'); // Hangerő gomb
+const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hangerő csúszka
+const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
 
 // Kezdeti hangerő beállítása
 audio.volume = volumeSlider.value;
 
 // Hangerő szabályozó megjelenítése
 volumeBtn.addEventListener('click', () => {
-    volumeSliderWrap.classList.toggle('active');
+    volumeSliderWrap.classList.toggle('active'); // Az active osztály hozzáadása a csúszkához
 });
 
-// Hangerő beállítása
+// Hangerő beállítása a csúszka értéke alapján
 volumeSlider.addEventListener('input', () => {
     audio.volume = volumeSlider.value;
 });
 
-// ---- DISCORD STATUS ----
+// ---- DISCORD STATUS FROM RENDER API ----
 async function fetchDiscordStatus() {
   try {
     const response = await fetch('https://antilink.onrender.com/api/status');
