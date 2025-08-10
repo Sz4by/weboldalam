@@ -5,7 +5,7 @@ body {
     padding: 0;
     background-color: #f4f4f9; /* Világos szürke háttér */
     color: #333; /* Sötét szöveg világos módban */
-    background-image: url('https://cdn.discordapp.com/attachments/1158510548095348839/1400787221052653580/aifaceswap-output.png?ex=688de842&is=688c96c2&hm=0ba098bc6bb235b4781f6da0a6fc1f87fc6a05456587cde3c71844e8e18a70e2&'); /* Világos háttérkép */
+    background-image: url('https://i.imgur.com/ygSLEJe.png'); /* Világos háttérkép */
     background-size: cover; /* A háttérkép kitölti az egész képernyőt */
     background-position: center; /* A háttérkép középre igazítva */
     background-attachment: fixed; /* A háttérkép fixálása */
@@ -160,7 +160,7 @@ header nav ul li a:hover {
 body[data-theme="dark"] {
     background-color: #121212;
     color: white;
-    background-image: url('https://cdn.discordapp.com/attachments/1158510548095348839/1400787419070070955/aifaceswap-output_1.png?ex=688de872&is=688c96f2&hm=b3e4ce5fa79f9b1febab0ad3563612be94b0441a59ae84e190310007de0b2024&'); /* Sötét háttérkép */
+    background-image: url('https://i.imgur.com/DZ5waga.png'); /* Sötét háttérkép */
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
