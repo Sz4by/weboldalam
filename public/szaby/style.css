@@ -290,26 +290,26 @@ html, body {
   .profile-card, .right-column, .music-card, .discord-status-card { min-width: unset; max-width: 97vw; width: 98vw;}
 }
 
-/* Hangerő konténer */
+
+/* Hangerő szabályozó */
 .volume-container {
   position: absolute;
   top: 16px;
   right: 20px;
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;  
 }
 
-/* Hangerő gomb */
+.music-card { 
+  position: relative; 
+}
+
 .volume-btn {
-  background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
+  background: linear-gradient(90deg,#fff 60%,#56e0f8 100%);
   border: none;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
+  width: 36px; height: 36px;
+  display: flex; 
+  align-items: center; 
   justify-content: center;
   box-shadow: 0 0 12px #56e0f855;
   font-size: 1.18em;
@@ -318,46 +318,45 @@ html, body {
   outline: none;
 }
 
-/* Hangerő csúszka konténer */
 .volume-slider-wrap {
-  display: none; /* Alapértelmezetten el van rejtve */
+  display: none; /* Alapértelmezetten rejtve */
   position: absolute;
-  top: 44px;
+  top: 44px; 
   right: 8px;
-  background: rgba(34,45,52,0.95);
+  background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
   padding: 12px 6px;
   box-shadow: 0 0 20px #56e0f877;
   z-index: 6;
 }
 
-/* Amikor a gombra kattintasz, és az active osztály hozzáadódik, a csúszka megjelenik */
-.volume-container.active .volume-slider-wrap {
-  display: flex; /* Megjeleníti a csúszkát */
-  animation: appear .19s;
-}
-
-/* Csúszka stílusa */
 .volume-slider {
   writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
   width: 26px;
   height: 110px;
   border-radius: 9px;
-  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
+  background: linear-gradient(180deg,#56e0f8 0%,#232d34 100%);
   accent-color: #56e0f8;
   outline: none;
 }
 
-/* Animáció a csúszka megjelenéséhez */
+.volume-container.active .volume-slider-wrap {
+  display: flex; /* Megjeleníti a csúszkát */
+  animation: appear .19s;
+}
+
 @keyframes appear {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
 
-/* Az aktiválás után a hangerő gomb színe változik */
-.volume-btn:active {
-  background: #1f374b44;
+@supports not (appearance: slider-vertical) {
+  .volume-slider {
+    transform: rotate(-90deg);
+    width: 92px;
+    height: 21px;
+  }
 }
 
 
