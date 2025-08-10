@@ -33,6 +33,7 @@ snow();
 // ---- MODERN MUSIC PLAYER SCRIPT + Cover ----
 const playlist = [
   { src: '/szaby/music/1.mp3', title: 'Lottery (Renegade)K CAMP', cover: '/szaby/images/cover1.jpg' },
+  { src: '/szaby/music/2.mp3', title: 'Under The Influence (Body Language)Chris Brown', cover: '/szaby/images/cover2.jpg' },
 ];
 let current = 0;
 const audio = document.getElementById('audio');
