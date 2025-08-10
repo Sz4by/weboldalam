@@ -440,10 +440,14 @@ button:hover {
   outline: none;
 }
 
+.volume-btn:active {
+  background: #1f374b44;
+}
+
 .volume-slider-wrap {
-  display: none; 
+  display: none;
   position: absolute;
-  top: 44px; 
+  top: 44px;
   right: 8px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
@@ -453,7 +457,7 @@ button:hover {
 }
 
 .volume-container.active .volume-slider-wrap {
-  display: flex; 
+  display: flex;
   animation: appear 0.19s;
 }
 
