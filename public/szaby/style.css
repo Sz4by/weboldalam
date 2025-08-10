@@ -459,7 +459,7 @@ button:hover {
   position: absolute;
   top: 10px; /* A kártya tetejére igazítjuk */
   right: 10px; /* A kártya jobb szélére */
-  z-index: 2;
+  z-index: 10; /* Győződjünk meg róla, hogy a hangerő szabályozó nem lesz takarva */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -495,7 +495,7 @@ button:hover {
   border-radius: 13px;
   padding: 12px 6px;
   box-shadow: 0 0 20px #56e0f877;
-  z-index: 6;
+  z-index: 11; /* Növeltük a z-index-et, hogy a csúszka jobban látható legyen */
 }
 
 .volume-container.active .volume-slider-wrap {
