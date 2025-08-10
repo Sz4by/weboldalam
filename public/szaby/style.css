@@ -335,6 +335,15 @@ html, body {
   background: linear-gradient(135deg, #69C9D0 0%, #EE1D52 100%) !important; 
 }
 
+.discord-status-avatar {
+  width: 48px;
+  height: 48px; 
+  border-radius: 50%;
+  border: 2px solid #67e2f5;
+  box-shadow: 0 0 12px #67e2f5bb, 0 2px 14px #67e2f577;
+  object-fit: cover;
+}
+
 .discord-status-header {
   display: flex;
   align-items: center;
