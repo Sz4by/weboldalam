@@ -1,4 +1,3 @@
-
 // ---- Hóesés ----
 let snowCanvas = document.getElementById('snow');
 let sctx = snowCanvas.getContext('2d');
@@ -57,6 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
         document.getElementById("audio").play(); // Zene elindítása
     };
+
+    // Kezdeti hangerő beállítása
+    audio.volume = 0.2; // 20% hangerőre állítjuk
 });
 
 // Kezdeti hangerő beállítása
@@ -76,8 +78,6 @@ volumeBtn.addEventListener('click', () => {
 volumeSlider.addEventListener('input', () => {
     audio.volume = volumeSlider.value;
 });
-
-
 
 function loadSong(idx, autoPlay = false) {
   audio.src = playlist[idx].src;
@@ -216,20 +216,4 @@ function updateDiscordStatus(data) {
   let statusText = statusMap[discord_status] || 'Ismeretlen státusz';
 
   if (activities && activities.length > 0) {
-    const customStatus = activities.find(a => a.type === 4);
-    if (customStatus && customStatus.state) {
-      statusText = customStatus.state;
-    }
-  }
-
-  const statusElem = document.getElementById('discordStatusText');
-  const stateElem = document.getElementById('discordState');
-
-  statusElem.textContent = statusText;
-  stateElem.textContent = statusMap[discord_status] || 'Ismeretlen státusz';
-  stateElem.className = `discord-status-state ${discord_status}`;
-}
-
-// Frissítés 15 másodpercenként
-setInterval(fetchDiscordStatus, 15000);
-fetchDiscordStatus();
+    const
