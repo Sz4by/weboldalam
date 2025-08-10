@@ -298,18 +298,16 @@ html, body {
   right: 20px;
   z-index: 2;
 }
-
-.music-card { 
-  position: relative; 
-}
+.music-card { position: relative; }
 
 .volume-btn {
-  background: linear-gradient(90deg,#fff 60%,#56e0f8 100%);
+  background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
   border: none;
   border-radius: 50%;
-  width: 36px; height: 36px;
-  display: flex; 
-  align-items: center; 
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
   justify-content: center;
   box-shadow: 0 0 12px #56e0f855;
   font-size: 1.18em;
@@ -319,9 +317,9 @@ html, body {
 }
 
 .volume-slider-wrap {
-  display: none; /* Alapértelmezetten rejtve */
+  display: none;
   position: absolute;
-  top: 44px; 
+  top: 44px;
   right: 8px;
   background: rgba(34, 45, 52, 0.95);
   border-radius: 13px;
@@ -336,19 +334,76 @@ html, body {
   width: 26px;
   height: 110px;
   border-radius: 9px;
-  background: linear-gradient(180deg,#56e0f8 0%,#232d34 100%);
+  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
   accent-color: #56e0f8;
   outline: none;
 }
 
+.volume-container {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.music-card {
+  position: relative;
+}
+
+.volume-btn {
+  background: rgba(20, 26, 30, 0.10);
+  border: none;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 1.13em;
+  color: #56e0f8;
+  box-shadow: 0 0 8px #56e0f855;
+  cursor: pointer;
+  transition: background 0.16s;
+}
+
+.volume-btn:active {
+  background: #1f374b44;
+}
+
+.volume-slider-wrap {
+  display: none;
+  background: #1f374bdd;
+  border-radius: 12px;
+  box-shadow: 0 0 13px #56e0f8aa;
+  padding: 12px 9px 12px 14px;
+  margin-top: 6px;
+  align-items: center;
+}
+
 .volume-container.active .volume-slider-wrap {
-  display: flex; /* Megjeleníti a csúszkát */
-  animation: appear .19s;
+  display: flex;
+  animation: appear 0.19s;
 }
 
 @keyframes appear {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.volume-slider {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 21px;
+  height: 92px;
+  accent-color: #56e0f8;
+  margin: 0 0 0 2px;
+  cursor: pointer;
 }
 
 @supports not (appearance: slider-vertical) {
@@ -358,7 +413,6 @@ html, body {
     height: 21px;
   }
 }
-
 
 
 /* Discord státusz kártya módosítások */
