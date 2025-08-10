@@ -37,3 +37,34 @@
         setInterval(checkDevTools, 1000);
     })();
 </script>
+
+// Rossz tevékenység logolása
+function reportBadActivity(reason) {
+    const page = window.location.pathname;
+    const reportData = {
+        reason: reason,
+        page: page
+    };
+
+    // Küldd el a jelentést a szervernek (itt az API endpoint-ot hívhatod meg)
+    fetch('/report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Jelentés elküldve:', data);
+    })
+    .catch(error => {
+        console.error('Hiba történt a jelentés küldésekor:', error);
+    });
+}
+
+// Modal és zene lejátszása (Elfogadom gombra kattintás)
+document.getElementById("acceptBtn").onclick = function() {
+    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
+    document.getElementById("audio").play(); // Zene elindítása
+};
