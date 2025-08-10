@@ -413,10 +413,11 @@ button:hover {
 }
 
 
+/* Hangerőszabályzó */
 .volume-container {
   position: absolute;
-  top: 10px; /* A kártya tetejére igazítjuk */
-  right: 10px; /* A kártya jobb szélére */
+  top: 10px;
+  right: 10px;
   z-index: 2;
   display: flex;
   flex-direction: column;
