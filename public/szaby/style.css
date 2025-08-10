@@ -284,6 +284,13 @@ html, body {
 @media (max-width: 980px) {
   .main-flex { flex-direction: column; gap: 0; align-items: center; margin-top: 2.2rem;}
   .profile-card, .right-column, .music-card, .discord-status-card { min-width: unset; max-width: 97vw; width: 98vw;}
+}
+
+.music-card { position: relative; }
+
+}
+.music-card { position: relative; }
+
 
 /* Discord státusz kártya módosítások */
 .discord-status-card > .discord-status-left-right {
