@@ -65,25 +65,17 @@ const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hanger�
 const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
 
 // Kezdeti hangerő beállítása
-const audio = document.getElementById('audio'); // Audio elem
 audio.volume = volumeSlider.value;
 
 // Hangerő szabályozó megjelenítése
 volumeBtn.addEventListener('click', () => {
-    volumeSliderWrap.classList.toggle('active'); // Az active osztály hozzáadása a csúszkához, hogy látszódjon
+    volumeSliderWrap.classList.toggle('active'); // Az active osztály hozzáadása a csúszkához
 });
 
 // Hangerő beállítása a csúszka értéke alapján
 volumeSlider.addEventListener('input', () => {
     audio.volume = volumeSlider.value;
 });
-
-// Ha a hangerő csúszka el van rejtve, és rákattintasz, akkor előbukkan
-volumeBtn.addEventListener('click', () => {
-    volumeSliderWrap.classList.toggle('active'); // Aktiválja a csúszkát
-});
-
-// Ha már megjelenik, az alap hangerő csúszka folyamatosan működni fog
 
 
 
