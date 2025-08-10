@@ -32,7 +32,7 @@ snow();
 
 // ---- MODERN MUSIC PLAYER SCRIPT + Cover ----
 const playlist = [
-  { src: '/szaby/music/1.mp3', title: 'Look at Me Now', cover: '/szaby/images/cover1.jpg' },
+  { src: '/szaby/music/1.mp3', title: 'Lottery (Renegade)K CAMP', cover: '/szaby/images/cover1.jpg' },
 ];
 let current = 0;
 const audio = document.getElementById('audio');
