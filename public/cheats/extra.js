@@ -1,42 +1,75 @@
-// Funkció, amely ellenőrzi, hogy mobil eszközt használunk-e
-function isMobileDevice() {
-    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+// Ne engedj jobb kattintást
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();  // Megakadályozza a jobb kattintás menüt
+    reportBadActivity('Jobb kattintás blokkolva');
+});
+
+// Ne engedj Ctrl+U vagy Ctrl+Shift+I kombinációt
+document.addEventListener('keydown', (e) => {
+    // Ctrl+U (forrás megtekintés)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+U kombináció blokkolva');
+    }
+
+    // Ctrl+Shift+I (fejlesztői eszközök)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
+    }
+
+    // F12 (Fejlesztői eszközök, másik lehetőség)
+    if (e.key === 'F12') {
+        e.preventDefault();
+        reportBadActivity('F12 (fejlesztői eszközök) blokkolva');
+    }
+
+    // Ctrl+Shift+J (JavaScript konzol megnyitása)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+J kombináció blokkolva');
+    }
+
+    // Ctrl+Shift+C (Elemek vizsgálata)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+C kombináció blokkolva');
+    }
+
+    // Ctrl+P (Nyomtatás)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+P kombináció blokkolva');
+    }
+
+    // Ctrl+S (Mentés)
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+S kombináció blokkolva');
+    }
+
+    // Ctrl+Shift+N (Új inkognitó ablak)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+N kombináció blokkolva');
+    }
+});
+
+// Funckió a DevTools nyitva állapotának ellenőrzésére, figyelembe véve a mobilos eszközöket
+function detectDevTools() {
+    // Csak desktop eszközökön figyeljük
+    if (window.innerWidth > 800) { // Ha az ablak szélessége nagyobb, mint 800px, akkor desktop
+        const threshold = 160;  // Ha az ablak szélessége 160px-nél kisebb, valószínűleg megnyitották a DevTools-t
+        const width = window.innerWidth;
+
+        if (width < threshold) {
+            reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
+        }
+    }
 }
 
-// Ha mobil eszközt használunk
-if (isMobileDevice()) {
-    let devtoolsOpen = false;
-    const devtoolsCheck = setInterval(() => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        
-        // Mobil eszközön figyeljük a képernyő méretének változását
-        if (width <= 800 && height <= 600 && !devtoolsOpen) {  // Ha a képernyő szélessége és magassága csökken
-            devtoolsOpen = true;
-            window.location.href = 'https://www.example.com';  // Itt add meg az átirányítást
-            console.log("DevTools nyitva mobil eszközön");
-        } else if (width > 800 || height > 600) {  // Ha a méret visszaáll, akkor a DevTools valószínűleg zárva van
-            devtoolsOpen = false;
-        }
-    }, 1000); // Ellenőrzés 1 másodpercenként
-} else {
-    // Asztali eszközökön érzékeljük a DevTools-t
-    let devtoolsOpen = false;
-    const devtoolsCheck = setInterval(() => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        if (width <= 800 || height <= 600) {  // Ha a képernyő mérete csökken, akkor valószínűleg DevTools van nyitva
-            if (!devtoolsOpen) {
-                devtoolsOpen = true;
-                window.location.href = 'https://www.example.com';  // Itt add meg az átirányítást
-                console.log('DevTools nyitva');
-            }
-        } else {
-            devtoolsOpen = false;
-        }
-    }, 1000);
-}
+// Ellenőrzés folyamatosan
+setInterval(detectDevTools, 1000); // Minden másodpercben ellenőrzi
 
 // Rossz tevékenység logolása
 function reportBadActivity(reason) {
