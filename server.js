@@ -201,6 +201,7 @@ function formatGeoDataReport(geo, pageUrl) {
   );
 }
 
+
 /* =========================
    Geo lekérés + VPN ellenőrzés
    ========================= */
@@ -213,6 +214,7 @@ async function getGeo(ip) {
     return {};
   }
 }
+
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
@@ -319,8 +321,11 @@ app.use(async (req, res, next) => {
           color: 0xff0000
         }]
       }).catch(() => {});
+      
       const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-      if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
+      if (fs.existsSync(bannedVpnPage)) {
+        return res.status(403).sendFile(bannedVpnPage);  // Itt is leállítjuk a válasz küldését
+      }
       return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
     }
   } else {
@@ -337,7 +342,7 @@ app.use(async (req, res, next) => {
     }
   }
 
-  next();
+  next(); // Ha minden rendben, folytatjuk a kérés feldolgozását
 });
 
 // =========================
@@ -352,6 +357,8 @@ app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
+
+
 
 
 // =========================
