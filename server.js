@@ -277,12 +277,9 @@ app.use((req, res, next) => {
   next();  // Ha nem tiltott az IP, folytatja a kérés feldolgozását
 });
 
-
-
-
-// =========================
-// HTML logoló + VPN szűrő
-// =========================
+/* =========================
+   HTML logoló + VPN szűrő
+   ========================= */
 app.use(async (req, res, next) => {
   const publicDir = path.join(__dirname, 'public');
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
@@ -302,31 +299,44 @@ app.use(async (req, res, next) => {
   const ip = getClientIp(req);
   const geoData = await getGeo(ip);
 
-  if (!MY_IPS.includes(ip)) {
-    axios.post(MAIN_WEBHOOK, {
-      username: "Látogató Naplózó",
-      embeds: [{
-        title: 'Új látogató (HTML)',
-        description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
-        color: 0x800080
-      }]
-    }).catch(()=>{});
+  // Ellenőrizzük a tiltott IP-ket, ha tiltott, ne logoljunk semmit
+  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
+    const bannedData = readBannedIPs(); // JSON-ból beolvassuk a tiltott IP-ket
+    if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) {
+      return res.status(403).sendFile(path.join(__dirname, 'public', 'banned-permanent.html'));
+    }
   }
 
+  // Ha nem VPN, akkor logoljuk a fő logba
   const vpnCheck = await isVpnProxy(ip);
-  if (vpnCheck && !WHITELISTED_IPS.includes(ip)) {
-    axios.post(ALERT_WEBHOOK, {
-      username: "VPN Figyelő",
-      embeds: [{
-        title: 'VPN/proxy vagy TOR!',
-        description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
-        color: 0xff0000
-      }]
-    }).catch(()=>{});
-    const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-    if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
-    return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
+  if (vpnCheck) {
+    if (!WHITELISTED_IPS.includes(ip)) {
+      axios.post(ALERT_WEBHOOK, {
+        username: "VPN Figyelő",
+        embeds: [{
+          title: 'VPN/proxy vagy TOR!',
+          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
+          color: 0xff0000
+        }]
+      }).catch(() => {});
+      const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
+      if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
+      return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
+    }
+  } else {
+    // Normál felhasználó esetén logolás a fő webhookba
+    if (!MY_IPS.includes(ip)) {
+      axios.post(MAIN_WEBHOOK, {
+        username: "Látogató Naplózó",
+        embeds: [{
+          title: 'Új látogató (HTML)',
+          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
+          color: 0x800080
+        }]
+      }).catch(() => {});
+    }
   }
+
   next();
 });
 
@@ -342,6 +352,7 @@ app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
+
 
 // =========================
 // Admin – böngészős felület (GET /admin)
