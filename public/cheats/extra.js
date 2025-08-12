@@ -64,6 +64,9 @@ function detectDevTools() {
     // Ha a DevTools nyitva van, akkor az ablak mérete megváltozik
     if (width - window.innerWidth > threshold || height - window.innerHeight > threshold) {
         reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
+        
+        // Átirányítás egy másik oldalra
+        window.location.href = "https://masik-oldal.com";  // Itt add meg a kívánt URL-t
     }
 }
 
