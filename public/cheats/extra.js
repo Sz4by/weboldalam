@@ -55,24 +55,15 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Funckió a DevTools nyitva állapotának ellenőrzésére, figyelembe véve a mobilos eszközöket
+// Funckió a DevTools nyitva állapotának ellenőrzésére
 function detectDevTools() {
-    // Csak desktop eszközökön figyeljük
-    if (window.innerWidth > 800) { // Ha az ablak szélessége nagyobb, mint 800px, akkor desktop
-        const threshold = 160;  // Ha az ablak szélessége 160px-nél kisebb, valószínűleg megnyitották a DevTools-t
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        
-        // Ha a magasság megváltozott, akkor valószínűleg megnyitották a DevTools-t
-        if (width < threshold || height < threshold) {
-            reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
-        }
+    const threshold = 160;  // Küszöb a DevTools észlelésére
+    const width = window.outerWidth;
+    const height = window.outerHeight;
 
-        // Alternatív megközelítés, ha a console törlésre kerül:
-        const devToolsOpen = /./;
-        devToolsOpen.toString = function() {
-            reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
-        };
+    // Ha a DevTools nyitva van, akkor az ablak mérete megváltozik
+    if (width - window.innerWidth > threshold || height - window.innerHeight > threshold) {
+        reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
     }
 }
 
