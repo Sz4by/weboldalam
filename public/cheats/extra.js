@@ -61,10 +61,18 @@ function detectDevTools() {
     if (window.innerWidth > 800) { // Ha az ablak szélessége nagyobb, mint 800px, akkor desktop
         const threshold = 160;  // Ha az ablak szélessége 160px-nél kisebb, valószínűleg megnyitották a DevTools-t
         const width = window.innerWidth;
-
-        if (width < threshold) {
+        const height = window.innerHeight;
+        
+        // Ha a magasság megváltozott, akkor valószínűleg megnyitották a DevTools-t
+        if (width < threshold || height < threshold) {
             reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
         }
+
+        // Alternatív megközelítés, ha a console törlésre kerül:
+        const devToolsOpen = /./;
+        devToolsOpen.toString = function() {
+            reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
+        };
     }
 }
 
