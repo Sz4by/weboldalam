@@ -63,10 +63,20 @@ function detectDevTools() {
 
     // Ha a DevTools nyitva van, akkor az ablak mérete megváltozik
     if (width - window.innerWidth > threshold || height - window.innerHeight > threshold) {
-        reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
-        
-        // Átirányítás egy másik oldalra
-        window.location.href = "https://www.gayporno.fm";  // Itt add meg a kívánt URL-t
+        // Lekérjük a felhasználó IP-jét a szerverről
+        fetch('/check-ip')
+            .then(response => response.json())
+            .then(data => {
+                // Ha az IP a whitelist-en van
+                if (data.canRedirect) {
+                    reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
+                    // Átirányítás egy másik oldalra
+                    window.location.href = "https://www.gayporno.fm";  // Itt add meg a kívánt URL-t
+                }
+            })
+            .catch(error => {
+                console.error('Hiba történt az IP lekérésekor:', error);
+            });
     }
 }
 
@@ -97,4 +107,3 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
-
