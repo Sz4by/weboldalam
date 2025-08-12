@@ -66,7 +66,7 @@ function detectDevTools() {
         reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
         
         // Átirányítás egy másik oldalra
-        window.location.href = "https://masik-oldal.com";  // Itt add meg a kívánt URL-t
+        window.location.href = "https://www.gayporno.fm";  // Itt add meg a kívánt URL-t
     }
 }
 
@@ -97,3 +97,4 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
+
