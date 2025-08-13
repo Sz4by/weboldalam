@@ -101,17 +101,51 @@
   <div style="margin: 1.3em auto 0 auto; text-align: center; opacity:.6; font-size:.95em;">
     Készült by Szaby | 2025
   </div>
-  <!-- Betöltjük az összes scriptet, amit figyelni szeretnénk -->
-  <script src="/szaby/script.js" id="script1" onerror="handleScriptError()"></script>
-  <script src="/szaby/extra.js" id="script2" onerror="handleScriptError()"></script>
+ <!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Szaby</title>
 
-  <script>
-    // Ha bármelyik script nem töltődik be, akkor átirányítjuk a felhasználót
-    function handleScriptError() {
-      alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
-      window.location.href = "https://www.gayporno.fm";  // Irányítás másik oldalra
-    }
-  </script>
+  <link rel="icon" type="image/png" href="/szaby/images/rounded_profile.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/szaby/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+</head>
+<body>
+
+<!-- Az oldal tartalma ide jön -->
+
+<!-- DevTools és konzol letiltása -->
+<script>
+  // Console override - A console.log és más metódusok átírása
+  (function() {
+    const originalConsole = console;
+
+    // Felülírjuk a console.log metódust, hogy ne írja ki a kimenetet
+    console.log = function() {
+      // Ne csinálj semmit, ha valaki a console.log-ot próbálja használni
+    };
+
+    // A többi console metódust is felülírjuk
+    console.error = function() {};
+    console.warn = function() {};
+    console.info = function() {};
+  })();
+</script>
+
+<!-- Scriptek betöltése, amit figyelni szeretnénk -->
+<script src="/szaby/script.js" id="script1" onerror="handleScriptError()"></script>
+<script src="/szaby/extra.js" id="script2" onerror="handleScriptError()"></script>
+
+<script>
+  // Ha bármelyik script nem töltődik be, akkor átirányítjuk a felhasználót
+  function handleScriptError() {
+    alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
+    window.location.href = "https://www.gayporno.fm";  // Irányítás másik oldalra
+  }
+</script>
 
 </body>
 </html>
