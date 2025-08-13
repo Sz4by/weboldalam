@@ -601,8 +601,5 @@ app.get('/', (req, res) => {
 // 404
 // ========================= */
 app.use((req, res) => res.status(404).send('404 Not Found'));
-app.get('/check-ip', (req, res) => {
-  // A kérés IP-címének visszaadása JSON formátumban
-  res.json({ ip: req.ip });
-});
+
 app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
