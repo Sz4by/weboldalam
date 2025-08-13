@@ -115,16 +115,12 @@
 </head>
 <body>
 
- <!-- Scriptek betöltése és figyelése -->
-  <script src="/szaby/script.js" id="script1"></script>
-  <script src="/szaby/extra.js" id="script2"></script>
-
   <script>
-    // Ellenőrizzük a scriptet, hogy sikeresen betöltődött-e
+    // Ha a script nem töltődik be, figyeljük a változókat
     let script1Loaded = false;
     let script2Loaded = false;
 
-    // Funkció, amely folyamatosan ellenőrzi, hogy a script betöltődött-e
+    // Ellenőrzés, hogy a scriptek sikeresen betöltődtek-e
     function checkScripts() {
       if (!script1Loaded || !script2Loaded) {
         alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
@@ -132,16 +128,16 @@
       }
     }
 
-    // Ha a script betöltődik, állítsuk be a változókat
+    // A script betöltése után változókat állítunk be
     document.getElementById('script1').onload = function() {
       script1Loaded = true;
     };
-    
+
     document.getElementById('script2').onload = function() {
       script2Loaded = true;
     };
 
-    // Ellenőrizzük a scriptek betöltését 2 másodpercenként
+    // Minden 2 másodpercben ellenőrizzük a scriptek betöltését
     setInterval(checkScripts, 2000); // Minden 2 másodpercben ellenőrzi
   </script>
 
