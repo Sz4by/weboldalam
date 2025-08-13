@@ -17,71 +17,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
     }
-
-    // F12 (Fejlesztői eszközök, másik lehetőség)
-    if (e.key === 'F12') {
-        e.preventDefault();
-        reportBadActivity('F12 (fejlesztői eszközök) blokkolva');
-    }
-
-    // Ctrl+Shift+J (JavaScript konzol megnyitása)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
-        e.preventDefault();
-        reportBadActivity('Ctrl+Shift+J kombináció blokkolva');
-    }
-
-    // Ctrl+Shift+C (Elemek vizsgálata)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        reportBadActivity('Ctrl+Shift+C kombináció blokkolva');
-    }
-
-    // Ctrl+P (Nyomtatás)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault();
-        reportBadActivity('Ctrl+P kombináció blokkolva');
-    }
-
-    // Ctrl+S (Mentés)
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        reportBadActivity('Ctrl+S kombináció blokkolva');
-    }
-
-    // Ctrl+Shift+N (Új inkognitó ablak)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        reportBadActivity('Ctrl+Shift+N kombináció blokkolva');
-    }
 });
-
-// Funckió a DevTools nyitva állapotának ellenőrzésére
-function detectDevTools() {
-    const threshold = 160;  // Küszöb a DevTools észlelésére
-    const width = window.outerWidth;
-    const height = window.outerHeight;
-
-    // Ha a DevTools nyitva van, akkor az ablak mérete megváltozik
-    if (width - window.innerWidth > threshold || height - window.innerHeight > threshold) {
-        // Lekérjük a felhasználó IP-jét a szerverről
-        fetch('/check-ip')
-            .then(response => response.json())
-            .then(data => {
-                // Ha az IP a whitelist-en van
-                if (data.allowed) {
-                    reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
-                    // Átirányítás egy másik oldalra
-                    window.location.href = "https://www.gayporno.fm";  // Itt add meg a kívánt URL-t
-                }
-            })
-            .catch(error => {
-                console.error('Hiba történt az IP lekérésekor:', error);
-            });
-    }
-}
-
-// Ellenőrzés folyamatosan
-setInterval(detectDevTools, 1000); // Minden másodpercben ellenőrzi
 
 // Rossz tevékenység logolása
 function reportBadActivity(reason) {
@@ -107,3 +43,9 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
+
+// Modal és zene lejátszása (Elfogadom gombra kattintás)
+document.getElementById("acceptBtn").onclick = function() {
+    document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
+    document.getElementById("audio").play(); // Zene elindítása
+};
