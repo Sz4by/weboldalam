@@ -28,7 +28,6 @@ function reportBadActivity(reason) {
     };
 
     // Küldd el a jelentést a szervernek (itt az API endpoint-ot hívhatod meg)
-    fetch('/kill', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -49,4 +48,5 @@ document.getElementById("acceptBtn").onclick = function() {
     document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
     document.getElementById("audio").play(); // Zene elindítása
 };
+
 
