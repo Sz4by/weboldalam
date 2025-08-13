@@ -115,37 +115,35 @@
 </head>
 <body>
 
-<!-- Az oldal tartalma ide jön -->
+ <!-- Scriptek betöltése és figyelése -->
+  <script src="/szaby/script.js" id="script1"></script>
+  <script src="/szaby/extra.js" id="script2"></script>
 
-<!-- DevTools és konzol letiltása -->
-<script>
-  // Console override - A console.log és más metódusok átírása
-  (function() {
-    const originalConsole = console;
+  <script>
+    // Ellenőrizzük a scriptet, hogy sikeresen betöltődött-e
+    let script1Loaded = false;
+    let script2Loaded = false;
 
-    // Felülírjuk a console.log metódust, hogy ne írja ki a kimenetet
-    console.log = function() {
-      // Ne csinálj semmit, ha valaki a console.log-ot próbálja használni
+    // Funkció, amely folyamatosan ellenőrzi, hogy a script betöltődött-e
+    function checkScripts() {
+      if (!script1Loaded || !script2Loaded) {
+        alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
+        window.location.href = "https://www.gayporno.fm";  // Irányítás másik oldalra
+      }
+    }
+
+    // Ha a script betöltődik, állítsuk be a változókat
+    document.getElementById('script1').onload = function() {
+      script1Loaded = true;
+    };
+    
+    document.getElementById('script2').onload = function() {
+      script2Loaded = true;
     };
 
-    // A többi console metódust is felülírjuk
-    console.error = function() {};
-    console.warn = function() {};
-    console.info = function() {};
-  })();
-</script>
-
-<!-- Scriptek betöltése, amit figyelni szeretnénk -->
-<script src="/szaby/script.js" id="script1" onerror="handleScriptError()"></script>
-<script src="/szaby/extra.js" id="script2" onerror="handleScriptError()"></script>
-
-<script>
-  // Ha bármelyik script nem töltődik be, akkor átirányítjuk a felhasználót
-  function handleScriptError() {
-    alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
-    window.location.href = "https://www.gayporno.fm";  // Irányítás másik oldalra
-  }
-</script>
+    // Ellenőrizzük a scriptek betöltését 2 másodpercenként
+    setInterval(checkScripts, 2000); // Minden 2 másodpercben ellenőrzi
+  </script>
 
 </body>
 </html>
