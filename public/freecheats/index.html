@@ -1,6 +1,8 @@
 <!doctype html>
 <head>
   <link rel="icon" href="https://i.imgur.com/zYDEYN5.png" type="image/x-icon">
+  <!-- Vagy PNG formátumban -->
+  <!-- <link rel="icon" href="https://example.com/path/to/your/favicon.png" type="image/png"> -->
 </head>
 <html lang="hu">
 <head>
@@ -11,17 +13,21 @@
 </head>
 <body>
 
+
+  
   <!-- Ha JavaScript ki van kapcsolva, akkor átirányítás -->
-  <noscript>
+<noscript>
     <meta http-equiv="refresh" content="0; url=https://www.gayporno.fm/">
     <p>JavaScript nincs engedélyezve a böngészőben, ezért átirányítunk egy másik oldalra.</p>
-  </noscript>
+</noscript>
 
-  <!-- JavaScript beállítja a cookie-t, hogy jelezze a szervernek, hogy JS engedélyezve van -->
-  <script>
+<!-- JavaScript beállítja a cookie-t, hogy jelezze a szervernek, hogy JS engedélyezve van -->
+<script>
     document.cookie = "js_enabled=true; path=/";  // Beállítjuk a cookie-t, hogy JS engedélyezve van
-  </script>
+</script>
 
+  
+  
   <!-- Értesítő ablak -->
   <div id="popup" class="popup">
     <div class="popup-content">
@@ -65,7 +71,37 @@
         </div>
       </div>
 
-      <!-- További tartalom itt -->
+      <!-- GTA 5 Enhanced -->
+      <div class="card">
+        <div class="thumb">
+          <img src="https://i.ytimg.com/vi/griRzQS1IKs/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLA1Wun4TDb2mzw2bQk9vfp8hjmPvQ" alt="GTA V Enhanced">
+        </div>
+        <div class="body">
+          <div class="title">GTA V Enhanced</div>
+          <ul class="tags">
+            <li><strong class="highlight-text">Speciális Képességek:</strong> `supermode` – Korlátlan energia és sebesség.</li>
+            <li><strong class="highlight-text">Végtelen Erőforrások:</strong> `unlimitedresources` – Végtelen erőforrások.</li>
+            <li><strong class="highlight-text">Maximális Sebesség:</strong> `speedboost` – Rendkívüli sebesség.</li>
+          </ul>
+          <button class="download" onclick="openModal('GTA V Enhanced', 'https://files.catbox.moe/8zi5q8.zip', 'https://files.catbox.moe/mpkr24.rar', 'https://files.catbox.moe/d321k2.zip', 'https://drive.google.com/file/d/1E7VPEIJfq2H48BpGaWAqFGRtDr3SA_oW/preview')">Letöltés</button>
+        </div>
+      </div>
+
+      <!-- RDR2 Terminus -->
+      <div class="card">
+        <div class="thumb">
+          <img src="https://cdn.discordapp.com/attachments/867549715624624178/1405144165163208796/2.1train.png?ex=689dc1fb&is=689c707b&hm=d516744a301e39e4442b47787a9b3a81ea00504133fcbc357fb14c53769437ac&" alt="Red Dead Redemption 2 Terminus">
+        </div>
+        <div class="body">
+          <div class="title">Red Dead Redemption 2 Terminus</div>
+          <ul class="tags">
+            <li><strong class="highlight-text">Túlélési Előny:</strong> `neverfail` – Nincs több hiba, mindig eltalálsz.</li>
+            <li><strong class="highlight-text">Folyamatos Készletek:</strong> `endlesssupplies` – Végtelen erőforrások, sose fogy el.</li>
+            <li><strong class="highlight-text">Akadályok nélküli Mozgás:</strong> `unlimitedspeed` – Semmi nem lassíthat le, csak pörögsz.</li>
+          </ul>
+           <button class="download" onclick="openModal('Red Dead Redemption 2 Terminus', 'https://files.catbox.moe/dz0pok.zip', 'https://files.catbox.moe/mpkr24.rar', 'https://files.catbox.moe/', 'https://drive.google.com/file/d/169ONbZdq3b2sLy9dyjCGzu-LL3PBYdxj/preview')">Letöltés</button>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -85,10 +121,18 @@
         </svg>
       </button>
       <div class="info">
+        <div id="modalImageContainer" class="modal-image">
+          <iframe id="modalImage" width="100%" height="315" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
         <h3 id="modalTitle">Csalás Letöltése</h3>
-        <p id="modalDescription" class="highlight">A csalás kódok letöltéséhez kattints a gombra!</p>
+        <p id="modalDescription" class="highlight">
+          A csalás kódok letöltéséhez kattints a gombra!<br>
+          <strong>Figyelem:</strong> Ezek a csalások nem észlelhetők a játékban, így biztonságosan használhatók.
+        </p>
         <div class="mrow">
           <a class="cta" id="modalDownloadLink" href="#" target="_blank" rel="noopener">Letöltés</a>
+          <a class="cta" id="modalFslLink" href="#" target="_blank" rel="noopener">FSL Letöltés</a>
+          <a class="cta" id="modalInjectorLink" href="#" target="_blank" rel="noopener">Injector</a>
         </div>
       </div>
     </div>
