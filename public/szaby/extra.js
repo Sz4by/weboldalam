@@ -68,7 +68,7 @@ function detectDevTools() {
             .then(response => response.json())
             .then(data => {
                 // Ha az IP a whitelist-en van
-                if (data.canRedirect) {
+                if (data.allowed) {
                     reportBadActivity('Fejlesztői eszközök megnyitása észlelve');
                     // Átirányítás egy másik oldalra
                     window.location.href = "https://www.gayporno.fm";  // Itt add meg a kívánt URL-t
