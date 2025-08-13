@@ -92,6 +92,7 @@ function reportBadActivity(reason) {
     };
 
     // Küldd el a jelentést a szervernek (itt az API endpoint-ot hívhatod meg)
+    fetch('/report', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -106,6 +107,3 @@ function reportBadActivity(reason) {
         console.error('Hiba történt a jelentés küldésekor:', error);
     });
 }
-
-
-
