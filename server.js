@@ -212,12 +212,16 @@ function formatGeoDataReport(geo, pageUrl) {
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
-    console.log("Geo response:", geo.data); // Naplózzuk a választ
-    if (geo.data.success === false || geo.data.type === 'error') return {};
+    console.log("Geo response:", geo.data);  // Naplózunk minden választ
+
+    if (geo.data.success === false || geo.data.type === 'error') {
+      console.log("Geolokációs hiba:", geo.data);
+      return {};  // Ha hiba van, üres objektumot adunk vissza
+    }
     return geo.data;
   } catch (err) {
     console.log("Error fetching geo data:", err);  // Hibák naplózása
-    return {};
+    return {};  // Hiba esetén üres objektumot adunk vissza
   }
 }
 async function isVpnProxy(ip) {
