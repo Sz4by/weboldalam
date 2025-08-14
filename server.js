@@ -212,13 +212,14 @@ function formatGeoDataReport(geo, pageUrl) {
 async function getGeo(ip) {
   try {
     const geo = await axios.get(`https://ipwhois.app/json/${ip}`);
+    console.log("Geo response:", geo.data); // Naplózzuk a választ
     if (geo.data.success === false || geo.data.type === 'error') return {};
     return geo.data;
-  } catch {
+  } catch (err) {
+    console.log("Error fetching geo data:", err);  // Hibák naplózása
     return {};
   }
 }
-
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
