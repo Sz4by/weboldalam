@@ -13,7 +13,7 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
-const apiKey = process.env.IPINFO_API_KEY; // API kulcs .env-ből
+const apiKeys = process.env.IPINFO_API_KEYS.split(',');
 
 /* =========================
    IP normalizálás + IP lekérés
@@ -213,20 +213,19 @@ function formatGeoDataReport(geo, pageUrl) {
    ========================= */
 
 async function getGeo(ip) {
-  try {
-    const geo = await axios.get(`https://ipinfo.io/${ip}/json?token=${apiKey}`);
-    console.log("Geo response:", geo.data); // Naplózzuk a választ
-
-    if (!geo.data || geo.data.error) {
-      console.log("Geolokációs hiba:", geo.data);
-      return {}; // Hiba esetén üres objektum
+  for (const apiKey of apiKeys) {
+    try {
+      const geo = await axios.get(`https://ipinfo.io/${ip}/json?token=${apiKey}`);
+      console.log("Geo response:", geo.data);  // Naplózzuk a választ
+      return geo.data;  // Sikeres válasz, adatokat visszaadjuk
+    } catch (err) {
+      console.log(`Hiba az API-val (${apiKey}), próbálkozunk a következővel...`);
     }
-
-    return geo.data;
-  } catch (err) {
-    console.log("Error fetching geo data:", err); // Hibák naplózása
-    return {}; // Hiba esetén üres objektum
   }
+
+  // Ha minden API próbálkozás hibás, üres objektumot adunk vissza
+  console.log("Minden API próbálkozás hiba volt.");
+  return {};  // Hiba esetén üres objektumot adunk vissza
 }
 async function isVpnProxy(ip) {
   try {
