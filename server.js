@@ -212,16 +212,34 @@ function formatGeoDataReport(geo, pageUrl) {
    Geo lekérés + VPN ellenőrzés
    ========================= */
 
+
+// Proxy konfiguráció autentikáció nélkül (csak host és port)
+const proxy = {
+  host: '37.44.238.2',  // Proxy IP cím vagy domain neve
+  port: 53471,                     // Proxy port (például 8080 vagy 443)
+};
+
 async function getGeo(ip) {
-  for (const apiKey of apiKeys) {
-    try {
-      const geo = await axios.get(`https://ipinfo.io/${ip}/json?token=${apiKey}`);
-      console.log("Geo response:", geo.data);  // Naplózzuk a választ
-      return geo.data;  // Sikeres válasz, adatokat visszaadjuk
-    } catch (err) {
-      console.log(`Hiba az API-val (${apiKey}), próbálkozunk a következővel...`);
+  try {
+    // Kérés proxyval (autentikáció nélkül)
+    const geo = await axios.get(`https://ipwhois.app/json/${ip}`, {
+      proxy: proxy  // Proxy szerver használata az axios hívásban
+    });
+    console.log("Geo response:", geo.data);  // Naplózunk minden választ
+
+    if (geo.data.success === false || geo.data.type === 'error') {
+      console.log("Geolokációs hiba:", geo.data);
+      return {};  // Ha hiba van, üres objektumot adunk vissza
     }
+    return geo.data;
+  } catch (err) {
+    console.log("Error fetching geo data:", err);  // Hibák naplózása
+    return {};  // Hiba esetén üres objektumot adunk vissza
   }
+}
+
+// Tesztelés
+getGeo('8.8.8.8').then(data => console.log(data));
 
   // Ha minden API próbálkozás hibás, üres objektumot adunk vissza
   console.log("Minden API próbálkozás hiba volt.");
