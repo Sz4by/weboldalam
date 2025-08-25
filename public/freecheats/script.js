@@ -27,9 +27,9 @@ function openModal(game, downloadLink, fslLink, injectorLink, imageUrl) {
       descriptionEl.style.backgroundColor = '#F54927';
 
       // Elrejti a letöltési gombokat
-      dlEl.style.display = 'none';
-      fslEl.style.display = 'none';
-      injectorEl.style.display = 'none';
+      dlEl.style.display = 'block';
+      fslEl.style.display = 'block';
+      injectorEl.style.display = 'block';
       break;
     case 'GTA V Enhanced':
       descriptionEl.innerHTML = `
