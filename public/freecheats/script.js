@@ -22,9 +22,9 @@ function openModal(game, downloadLink, fslLink, injectorLink, imageUrl) {
     case 'GTA 5 Legacy':
       descriptionEl.innerHTML = `
         A csalás kódok letöltéséhez kattints a gombra!<br>
-        <strong>Figyelem:</strong> Ez a csalás jelenleg észlelve van a játékban, ezért ideiglenesen eltávolítottuk. Kérjük, légy türelmes!
+        <strong>Figyelem:</strong> Ez a csalás nem észlelhető a játékban, így biztonságosan használható.
       `;
-      descriptionEl.style.backgroundColor = '#F54927';
+      descriptionEl.style.backgroundColor = '#4BD2C0'; // Kék/zöld szín
 
       // Elrejti a letöltési gombokat
       dlEl.style.display = 'block';
