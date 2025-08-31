@@ -288,6 +288,15 @@ app.use((req, res, next) => {
    HTML logoló + VPN szűrő
    ========================= */
 app.use(async (req, res, next) => {
+  // --- KIVÉTELEK MEGADÁSA ---
+  // Az itt felsorolt útvonalakkal kezdődő kéréseket a kód nem fogja logolni.
+  const noLogPaths = ['/uptimer'];
+
+  if (noLogPaths.some(path => req.path.startsWith(path))) {
+    return next(); // Ha a kérés valamelyik listázott útvonalra érkezik, kihagyjuk a logolást
+  }
+  // -------------------------
+
   const publicDir = path.join(__dirname, 'public');
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
   const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, '');
@@ -308,13 +317,12 @@ app.use(async (req, res, next) => {
 
   // Ellenőrizzük a tiltott IP-ket, ha tiltott, ne logoljunk semmit
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
-    const bannedData = readBannedIPs(); // JSON-ból beolvassuk a tiltott IP-ket
+    const bannedData = readBannedIPs();
     if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) {
       return res.status(403).sendFile(path.join(__dirname, 'public', 'banned-permanent.html'));
     }
   }
 
-  // Ha nem VPN, akkor logoljuk a fő logba
   const vpnCheck = await isVpnProxy(ip);
   if (vpnCheck) {
     if (!WHITELISTED_IPS.includes(ip)) {
@@ -329,7 +337,7 @@ app.use(async (req, res, next) => {
       
       const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
       if (fs.existsSync(bannedVpnPage)) {
-        return res.status(403).sendFile(bannedVpnPage);  // Itt is leállítjuk a válasz küldését
+        return res.status(403).sendFile(bannedVpnPage);
       }
       return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
     }
@@ -347,7 +355,7 @@ app.use(async (req, res, next) => {
     }
   }
 
-  next(); // Ha minden rendben, folytatjuk a kérés feldolgozását
+  next();
 });
 
 // =========================
@@ -362,9 +370,6 @@ app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
-
-
-
 
 // =========================
 // Admin – böngészős felület (GET /admin)
@@ -395,8 +400,7 @@ app.get('/admin', (req, res) => {
       <button type="submit" data-action="ban">IP BAN 24h</button>
       <button type="submit" data-action="unban">IP UNBAN 24h</button>
       <button type="submit" data-action="permanent-ban">IP VÉGLEGES BAN</button>
-      <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> <!-- Végleges tiltás feloldása -->
-    </div>
+      <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> </div>
   </form>
   <div class="msg" id="msg"></div>
   
