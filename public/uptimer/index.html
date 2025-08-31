@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oldal nem található</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Alapbeállítások és reszetelés */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        /* A teljes oldal stílusa */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121826; /* Sötétkék háttér */
+            color: #f0f0f0;
+            display: grid;
+            place-items: center; /* A tartalom tökéletes középre igazítása */
+            padding: 20px;
+        }
+
+        /* A középső "kártya" konténer */
+        .container {
+            text-align: center;
+            background-color: #1a2233;
+            padding: 40px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* A "404" felirat stílusa színátmenettel */
+        .container h1 {
+            font-size: clamp(6rem, 25vw, 8rem); /* Reszponzív betűméret */
+            font-weight: 700;
+            background: linear-gradient(45deg, #4a90e2, #9013fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        /* A fő üzenet címe */
+        .container h2 {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* A magyarázó szöveg */
+        .container p {
+            color: #a0a0a0;
+            margin-bottom: 30px;
+        }
+
+        /* A "Vissza a főoldalra" gomb */
+        .button {
+            display: inline-block;
+            text-decoration: none;
+            background-color: #4a90e2;
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .button:hover {
+            transform: scale(1.05); /* Finom nagyítás a gombra lépve */
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>404</h1>
+        <h2>Itt nincs, amit kerestél</h2>
+        <p>Az oldal, amit elérni próbálsz, nem létezik, vagy áthelyezték máshova.</p>
+        <a href="/" class="button">Vissza a főoldalra</a>
+    </div>
+
+</body>
+</html>
