@@ -14,6 +14,12 @@ body {
   font-family: 'Inter', Arial, sans-serif;
   min-height: 100dvh;
   overflow-x: hidden;
+
+  /* EZ AZ ÚJ RÉSZ A SZÖVEGKIJELÖLÉS TILTÁSÁHOZ */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 html, body {
   height: 100%;
