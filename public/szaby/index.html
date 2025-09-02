@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Szaby</title>
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/szaby/images/rounded_profile.png" />
 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
@@ -13,7 +12,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
 </head>
 <body>
-<!-- Modal ablak -->
 <div id="blockModal" class="modal">
   <div class="modal-content">
     <p>Figyelem! Ne használd a fejlesztői eszközöket (DevTools), semmilyen <strong>Ctrl kombinációt</strong>, sem a <strong>jobb kattintást</strong> ezen az oldalon! Ha tízszer megszeged ezt a szabályt, az <strong>IP címed</strong> blokkolásra kerülhet, és előfordulhat, hogy az <strong>IP</strong> megjelenhet más rendszerekben, például egy Discord szerveren.</p>
@@ -22,13 +20,11 @@
 </div>
 
 
-  <!-- Ha JavaScript ki van kapcsolva, akkor átirányítás -->
-<noscript>
+  <noscript>
     <meta http-equiv="refresh" content="0; url=https://www.gayporno.fm/">
     <p>JavaScript nincs engedélyezve a böngészőben, ezért átirányítunk egy másik oldalra.</p>
 </noscript>
 
-<!-- JavaScript beállítja a cookie-t, hogy jelezze a szervernek, hogy JS engedélyezve van -->
 <script>
     document.cookie = "js_enabled=true; path=/";  // Beállítjuk a cookie-t, hogy JS engedélyezve van
 </script>
@@ -59,8 +55,7 @@
     <div class="right-column">
       <div class="music-card">
         
-        <!-- Hangerőszabályzó -->
-<div class="volume-container" id="volumeContainer">
+        <div class="volume-container" id="volumeContainer">
     <button id="volumeBtn" class="volume-btn"><i class="fas fa-volume-up"></i></button>
     <div class="volume-slider-wrap" id="volumeSliderWrap">
         <input type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider" class="volume-slider" orient="vertical" />
@@ -100,6 +95,14 @@
   </div>
   <div style="margin: 1.3em auto 0 auto; text-align: center; opacity:.6; font-size:.95em;">
     Készült by Szaby | 2025
+  </div>
+
+  <div id="view-counter">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+    <span id="view-count-number">...</span>
   </div>
   <script src="/szaby/script.js"></script>
   <script src="/szaby/extra.js"></script>
