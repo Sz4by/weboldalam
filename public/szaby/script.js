@@ -231,3 +231,33 @@ function updateDiscordStatus(data) {
 // Frissítés 15 másodpercenként
 setInterval(fetchDiscordStatus, 15000);
 fetchDiscordStatus();
+
+
+// === ÚJ RÉSZ: LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // A te egyedi azonosítóid a CountAPI szolgáltatáshoz
+    const namespace = 'szaby-is-a-dev'; 
+    const key = 'latogatok';
+
+    async function updateCounter() {
+      try {
+        const response = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
+        const data = await response.json();
+        
+        // Megkeressük a szám helyét az ID alapján és beírjuk az értéket
+        const countElement = document.getElementById('view-count-number');
+        countElement.innerText = data.value;
+
+      } catch (error) {
+        console.error("Számláló hiba:", error);
+        // Hiba esetén elrejthetjük az egész dobozt
+        const counterContainer = document.getElementById('view-counter');
+        counterContainer.style.display = 'none';
+      }
+    }
+
+    // Futtassuk a számláló frissítését
+    updateCounter();
+});
+// === ÚJ RÉSZ VÉGE ===
