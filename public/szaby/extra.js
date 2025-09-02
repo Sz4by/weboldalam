@@ -1,6 +1,6 @@
 // Ne engedj jobb kattintást
 document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();  // Megakadályozza a jobb kattintás menüt
+    e.preventDefault(); // Megakadályozza a jobb kattintás menüt
     reportBadActivity('Jobb kattintás blokkolva');
 });
 
@@ -49,3 +49,25 @@ document.getElementById("acceptBtn").onclick = function() {
     document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
     document.getElementById("audio").play(); // Zene elindítása
 };
+
+// ---------------- ÚJ RÉSZ KEZDETE ----------------
+
+// Fejlesztői eszközök (DevTools) figyelése és átirányítás
+// Ez a rész másodpercenként ellenőrzi, hogy a böngésző ablakának külső és belső mérete
+// között van-e jelentős különbség. Ha a konzol dokkolva van (jobb oldalon vagy alul),
+// ez a különbség megnő, ami jelzi a DevTools megnyitását.
+
+setInterval(() => {
+    const threshold = 160; // Ez egy küszöbérték pixelben. Finomhangolható.
+    
+    // Ellenőrizzük a szélesség és magasság különbségét
+    if (
+      window.outerWidth - window.innerWidth > threshold ||
+      window.outerHeight - window.innerHeight > threshold
+    ) {
+      // Ha a különbség nagyobb a küszöbértéknél, átirányítjuk a felhasználót.
+      window.location.href = 'https://www.google.com'; // <-- IDE ÍRD AZ ÁTIRÁNYÍTÁSI CÍMET!
+    }
+}, 1000); // Az ellenőrzés 1000ms (1 másodperc) időközönként fut le.
+
+// ---------------- ÚJ RÉSZ VÉGE ----------------
