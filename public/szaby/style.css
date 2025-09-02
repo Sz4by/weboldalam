@@ -458,3 +458,31 @@ button:hover {
   opacity: 0.9;  /* Növeld a sötétséget */
   pointer-events: none;
 }
+
+/* === ÚJ RÉSZ: LÁTOGATÓSZÁMLÁLÓ STÍLUSOK === */
+#view-counter {
+  position: fixed;
+  bottom: 20px;
+  left: 20px; /* Bal alsó sarokba helyezve */
+  background-color: rgba(10, 10, 10, 0.85);
+  color: #ffffff;
+  border-radius: 50px;
+  padding: 8px 16px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.15), 0 0 5px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  transition: transform 0.2s ease-out;
+}
+
+#view-counter:hover {
+  transform: scale(1.05);
+}
+/* === ÚJ RÉSZ VÉGE === */
