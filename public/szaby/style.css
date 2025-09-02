@@ -14,8 +14,6 @@ body {
   font-family: 'Inter', Arial, sans-serif;
   min-height: 100dvh;
   overflow-x: hidden;
-
-  /* EZ AZ ÚJ RÉSZ A SZÖVEGKIJELÖLÉS TILTÁSÁHOZ */
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -223,6 +221,8 @@ html, body {
   font-weight: 400;
   text-shadow: 0 2px 10px #00f7ff33;
 }
+
+/* EZ A RÉSZ VÁLTOZOTT: ÚJ IKON STÍLUSOK */
 .bio-links {
   display: flex;
   gap: 1.3rem;
@@ -231,39 +231,43 @@ html, body {
   flex-wrap: wrap;
 }
 .bio-link {
-  display: grid; place-items: center;
-  width: 41px; height: 41px;
-  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   background: var(--glass-bg);
-  border: 1px solid #b7faff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow);
-  position: relative;
-  overflow: hidden;
   transition: all 0.3s;
 }
-.bio-link img {
-  width: 63%;
-  min-width: 19px;
-  filter: filter: brightness(1) drop-shadow(0 0 4px #2b2b2b);
-  transition: filter 0.3s;
+.bio-link i {
+  font-size: 22px;
+  color: var(--primary);
+  text-shadow: 0 0 8px rgba(183, 250, 255, 0.5);
+  transition: all 0.3s ease;
 }
 .bio-link:hover {
-  background: #230dec;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-3px);
+  background: transparent; /* Eltávolítjuk a régi hover hátteret */
 }
-.bio-link:hover img {
-  filter: brightness(1.25) drop-shadow(0 0 6px var(--primary));
+.bio-link:hover i {
+  text-shadow: 0 0 12px;
 }
-.bio-link[href*="discord.com"]:hover { background: radial-gradient(circle at 30% 110%, #155a9b 0%, #027cc4 5%, #0e4dd6 45%, #3220db 60%, #285AEB 90%) !important; }
-.bio-link[href*="instagram.com"]:hover { background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important; }
-.bio-link[href*="spotify.com"]:hover { background: #1DB954 !important; }
-.bio-link[href*="youtube.com"]:hover { background: #FF0000 !important; }
-.bio-link[href*="tiktok.com"]:hover { background: linear-gradient(135deg, #69C9D0 0%, #EE1D52 100%) !important; }
+.bio-link.discord:hover i { color: #5865F2; }
+.bio-link.instagram:hover i { color: #E4405F; }
+.bio-link.spotify:hover i { color: #1DB954; }
+.bio-link.youtube:hover i { color: #FF0000; }
+.bio-link.tiktok:hover i { color: #00f2ea; text-shadow: 0 0 12px #ff0050, 0 0 8px #00f2ea; }
+
 .discord-status-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
 }
+/* ... (a CSS fájl többi része innentől változatlan) ... */
 .discord-status-status {
   margin-top: .12em;
   font-size: .96em;
@@ -425,7 +429,7 @@ html, body {
   background-color: rgba(0, 0, 0, 0.85); /* Sötétebb fekete háttér */
   justify-content: center;
   align-items: center;
-  z-index: 1001; /* EZ VÁLTOZOTT: Legyen a legtetején */
+  z-index: 1001;
 }
 
 .modal-content {
@@ -468,33 +472,26 @@ button:hover {
 /* === LÁTOGATÓSZÁMLÁLÓ STÍLUSOK (MÓDOSÍTVA: FELÜL, FÉLIG ÁTLÁTSZÓ) === */
 #view-counter {
   position: fixed;
-  top: 20px; /* Felülre pozícionálva */
-  left: 20px; /* Balra igazítva */
-  
-  /* ÁTTETSZŐ HÁTTÉR, A TÖBBI KÁRTYÁHOZ HASONLÓAN */
-  background: var(--glass-bg); /* A globális áttetsző háttér változó használata */
-  backdrop-filter: blur(var(--blur)); /* A globális blur változó használata */
-  -webkit-backdrop-filter: blur(var(--blur)); /* Safari kompatibilitás */
-  
-  color: var(--primary); /* A globális elsődleges szín használata */
-  border-radius: 50px; /* Kerek forma */
+  top: 20px;
+  left: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  color: var(--primary);
+  border-radius: 50px;
   padding: 8px 16px;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Inter', Arial, sans-serif; /* A fő betűtípus használata */
+  font-family: 'Inter', Arial, sans-serif;
   font-size: 16px;
   font-weight: 600;
-  
-  /* Árnyék a többi kártyával összhangban */
   box-shadow: var(--shadow); 
-  border: 1px solid var(--music-accent); /* A kártyákhoz hasonló keret */
-  
-  z-index: 1000; /* Ez a modal alatt lesz */
+  border: 1px solid var(--music-accent);
+  z-index: 1000;
   transition: transform 0.2s ease-out;
 }
 
 #view-counter:hover {
   transform: scale(1.05);
 }
-/* === LÁTOGATÓSZÁMLÁLÓ STÍLUSOK VÉGE === */
