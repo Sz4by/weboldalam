@@ -242,12 +242,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
     async function updateCounter() {
       try {
-        // EZ AZ EGY SOR VÁLTOZOTT! A régi, nem működő szolgáltatást cseréljük le egy újra.
-        const response = await fetch(`https://api.counterapi.dev/hit/${namespace}/${key}`);
+        // JAVÍTOTT RÉSZ: A helyes URL formátumot használjuk az új szolgáltatáshoz
+        const response = await fetch(`https://api.counterapi.dev/v1/${namespace}/${key}/up`);
         const data = await response.json();
         
+        // A JSON válaszban a számláló a "count" kulcs alatt van
         const countElement = document.getElementById('view-count-number');
-        countElement.innerText = data.value;
+        countElement.innerText = data.count;
 
       } catch (error) {
         // Hiba esetén egy vonalat teszünk a szám helyére.
