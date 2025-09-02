@@ -9,7 +9,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/szaby/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
 <div id="blockModal" class="modal">
@@ -19,7 +20,6 @@
   </div>
 </div>
 
-
   <noscript>
     <meta http-equiv="refresh" content="0; url=https://www.gayporno.fm/">
     <p>JavaScript nincs engedélyezve a böngészőben, ezért átirányítunk egy másik oldalra.</p>
@@ -28,8 +28,6 @@
 <script>
     document.cookie = "js_enabled=true; path=/";  // Beállítjuk a cookie-t, hogy JS engedélyezve van
 </script>
-
-
 
   <video class="bg-video" src="https://files.catbox.moe/grak0f.mp4" autoplay loop muted playsinline></video>
   <canvas id="snow"></canvas>
@@ -44,22 +42,23 @@
         Gyakran programozok vagy szerkesztek valamit, de ha jó a társaság, vevő vagyok bármilyen spontán bulira is.<br />
         Ha kérdésed van, írj bátran Discordon! 🤙
       </div>
+      
       <div class="bio-links">
-        <a class="bio-link" href="https://discord.gg/RwsFau5YSu" target="_blank"><img src="/szaby/images/discord.png" alt="Discord" /></a>
-        <a class="bio-link" href="https://www.instagram.com/0szaby0/" target="_blank"><img src="/szaby/images/instagram.png" alt="Instagram" /></a>
-        <a class="bio-link" href="https://open.spotify.com/user/1180160430/" target="_blank"><img src="/szaby/images/spotify.png" alt="Spotify" /></a>
-        <a class="bio-link" href="https://youtube.com/@sz4by/" target="_blank"><img src="/szaby/images/youtube.png" alt="YouTube" /></a>
-        <a class="bio-link" href="https://www.tiktok.com/@0_szaby_0/" target="_blank"><img src="/szaby/images/tiktok.png" alt="TikTok" /></a>
+        <a class="bio-link discord" href="https://discord.gg/RwsFau5YSu" target="_blank" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+        <a class="bio-link instagram" href="https://www.instagram.com/0szaby0/" target="_blank" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a class="bio-link spotify" href="https://open.spotify.com/user/1180160430/" target="_blank" aria-label="Spotify"><i class="fa-brands fa-spotify"></i></a>
+        <a class="bio-link youtube" href="https://youtube.com/@sz4by/" target="_blank" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a class="bio-link tiktok" href="https://www.tiktok.com/@0_szaby_0/" target="_blank" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
       </div>
     </div>
     <div class="right-column">
       <div class="music-card">
         
         <div class="volume-container" id="volumeContainer">
-    <button id="volumeBtn" class="volume-btn"><i class="fas fa-volume-up"></i></button>
-    <div class="volume-slider-wrap" id="volumeSliderWrap">
-        <input type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider" class="volume-slider" orient="vertical" />
-    </div>
+          <button id="volumeBtn" class="volume-btn"><i class="fas fa-volume-up"></i></button>
+          <div class="volume-slider-wrap" id="volumeSliderWrap">
+            <input type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider" class="volume-slider" orient="vertical" />
+          </div>
         </div>
         <img src="/szaby/images/cover1.jpg" alt="Zene borító" class="music-cover" id="musicCover" />
         <div class="music-title" id="musicTitle">Első zene címe</div>
