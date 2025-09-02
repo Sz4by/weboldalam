@@ -50,24 +50,30 @@ document.getElementById("acceptBtn").onclick = function() {
     document.getElementById("audio").play(); // Zene elindítása
 };
 
-// ---------------- ÚJ RÉSZ KEZDETE ----------------
+// ---------------- MÓDOSÍTOTT RÉSZ KEZDETE ----------------
 
-// Fejlesztői eszközök (DevTools) figyelése és átirányítás
-// Ez a rész másodpercenként ellenőrzi, hogy a böngésző ablakának külső és belső mérete
-// között van-e jelentős különbség. Ha a konzol dokkolva van (jobb oldalon vagy alul),
-// ez a különbség megnő, ami jelzi a DevTools megnyitását.
+// Ez a függvény ellenőrzi, hogy az eszköz asztali gép-e (nem telefon vagy tablet).
+function isDesktop() {
+    // A 768px egy gyakori töréspont a mobil/tablet és az asztali nézetek között.
+    return window.innerWidth > 768;
+}
 
-setInterval(() => {
-    const threshold = 160; // Ez egy küszöbérték pixelben. Finomhangolható.
-    
-    // Ellenőrizzük a szélesség és magasság különbségét
-    if (
-      window.outerWidth - window.innerWidth > threshold ||
-      window.outerHeight - window.innerHeight > threshold
-    ) {
-      // Ha a különbség nagyobb a küszöbértéknél, átirányítjuk a felhasználót.
-      window.location.href = 'https://www.google.com'; // <-- IDE ÍRD AZ ÁTIRÁNYÍTÁSI CÍMET!
-    }
-}, 1000); // Az ellenőrzés 1000ms (1 másodperc) időközönként fut le.
+// A DevTools figyelőt csak akkor futtatjuk, ha az eszköz asztali gépnek tűnik.
+// Ezzel elkerüljük a felesleges átirányításokat mobil eszközökön.
+if (isDesktop()) {
+    setInterval(() => {
+        const threshold = 160; // Pixelben megadott küszöbérték.
+        
+        // Ellenőrizzük a böngészőablak külső és belső méreteinek különbségét.
+        if (
+            window.outerWidth - window.innerWidth > threshold ||
+            window.outerHeight - window.innerHeight > threshold
+        ) {
+            // Ha a DevTools nyitva van, átirányítunk.
+            // Itt add meg ugyanazt a címet, mint a HTML-ben
+            window.location.href = 'https://www.google.com/hibaoldal.html';
+        }
+    }, 1000); // Ellenőrzés másodpercenként.
+}
 
-// ---------------- ÚJ RÉSZ VÉGE ----------------
+// ---------------- MÓDOSÍTOTT RÉSZ VÉGE ----------------
