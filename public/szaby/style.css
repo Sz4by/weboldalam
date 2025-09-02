@@ -68,14 +68,14 @@ html, body {
   min-width: 390px;
   max-width: 440px;
   width: 100%;
-  margin-bottom: 1.5rem; /* Csökkentettük a távolságot az alsó részen */
+  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(var(--blur));
   border: 2px solid var(--music-accent);
-  gap: 0.8rem; /* Csökkentettük a gap értékét */
+  gap: 0.8rem;
   height: 532px;
   box-sizing: border-box;
   text-align: center;
@@ -221,8 +221,6 @@ html, body {
   font-weight: 400;
   text-shadow: 0 2px 10px #00f7ff33;
 }
-
-/* EZ A RÉSZ VÁLTOZOTT: ÚJ IKON STÍLUSOK */
 .bio-links {
   display: flex;
   gap: 1.3rem;
@@ -230,7 +228,10 @@ html, body {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* EZ A TELJES RÉSZ VÁLTOZOTT AZ ÚJ IKON-EFFEKTHEZ */
 .bio-link {
+  position: relative;
   display: grid;
   place-items: center;
   width: 42px;
@@ -240,34 +241,42 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow);
   transition: all 0.3s;
-}
-.bio-link i {
-  font-size: 22px;
-  color: var(--primary);
-  text-shadow: 0 0 8px rgba(183, 250, 255, 0.5);
-  transition: all 0.3s ease;
+  overflow: hidden; /* Fontos a szép határokhoz */
 }
 .bio-link:hover {
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-3px);
-  background: transparent; /* Eltávolítjuk a régi hover hátteret */
+}
+.bio-link i {
+  position: absolute;
+  font-size: 22px;
+  color: var(--primary);
+  text-shadow: 0 0 8px rgba(183, 250, 255, 0.5);
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+.color-icon {
+  position: absolute;
+  width: 100%; /* Kitölti a teljes gombot */
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 .bio-link:hover i {
-  text-shadow: 0 0 12px;
+  opacity: 0;
 }
-.bio-link.discord:hover i { color: #5865F2; }
-.bio-link.instagram:hover i { color: #E4405F; }
-.bio-link.spotify:hover i { color: #1DB954; }
-.bio-link.youtube:hover i { color: #FF0000; }
-.bio-link.tiktok:hover i { color: #00f2ea; text-shadow: 0 0 12px #ff0050, 0 0 8px #00f2ea; }
+.bio-link:hover .color-icon {
+  opacity: 1;
+}
 
+/* ... (a CSS fájl többi része innentől változatlan) ... */
 .discord-status-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
 }
-/* ... (a CSS fájl többi része innentől változatlan) ... */
 .discord-status-status {
   margin-top: .12em;
   font-size: .96em;
@@ -420,31 +429,31 @@ html, body {
 }
 /* Modal stílusok */
 #blockModal {
-  display: none; /* Alapértelmezetten rejtve */
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.85); /* Sötétebb fekete háttér */
+  background-color: rgba(0, 0, 0, 0.85);
   justify-content: center;
   align-items: center;
   z-index: 1001;
 }
 
 .modal-content {
-  background-color: rgba(0, 0, 0, 0.9); /* Még sötétebb modal háttér */
+  background-color: rgba(0, 0, 0, 0.9);
   padding: 20px;
   border-radius: 8px;
   text-align: center;
   max-width: 400px;
   margin: auto;
-  color: #fff; /* Fehér szöveg */
+  color: #fff;
 }
 
 button {
   padding: 10px 20px;
-  background-color: #333; /* Sötét háttér */
+  background-color: #333;
   color: white;
   border: none;
   border-radius: 5px;
@@ -452,7 +461,7 @@ button {
 }
 
 button:hover {
-  background-color: #555; /* Sötétebb árnyalat */
+  background-color: #555;
 }
 
 /* Háttér sötétítése a videóval */
@@ -464,12 +473,12 @@ button:hover {
   height: 100vh;
   object-fit: cover;
   z-index: 0;
-  filter: brightness(0.4) blur(4px); /* Sötét háttér */
-  opacity: 0.9;  /* Növeld a sötétséget */
+  filter: brightness(0.4) blur(4px);
+  opacity: 0.9;
   pointer-events: none;
 }
 
-/* === LÁTOGATÓSZÁMLÁLÓ STÍLUSOK (MÓDOSÍTVA: FELÜL, FÉLIG ÁTLÁTSZÓ) === */
+/* LÁTOGATÓSZÁMLÁLÓ STÍLUSOK */
 #view-counter {
   position: fixed;
   top: 20px;
