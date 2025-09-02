@@ -233,7 +233,7 @@ setInterval(fetchDiscordStatus, 15000);
 fetchDiscordStatus();
 
 
-// === ÚJ RÉSZ: LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
+// === LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
 document.addEventListener("DOMContentLoaded", function() {
     
     // A te egyedi azonosítóid a CountAPI szolgáltatáshoz
@@ -245,19 +245,18 @@ document.addEventListener("DOMContentLoaded", function() {
         const response = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
         const data = await response.json();
         
-        // Megkeressük a szám helyét az ID alapján és beírjuk az értéket
         const countElement = document.getElementById('view-count-number');
         countElement.innerText = data.value;
 
       } catch (error) {
+        // EZT A RÉSZT MÓDOSÍTOTTAM:
+        // Hiba esetén már nem elrejtjük a dobozt, hanem egy vonalat teszünk a szám helyére.
         console.error("Számláló hiba:", error);
-        // Hiba esetén elrejthetjük az egész dobozt
-        const counterContainer = document.getElementById('view-counter');
-        counterContainer.style.display = 'none';
+        const countElement = document.getElementById('view-count-number');
+        countElement.innerText = '–';
       }
     }
 
     // Futtassuk a számláló frissítését
     updateCounter();
 });
-// === ÚJ RÉSZ VÉGE ===
