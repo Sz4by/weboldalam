@@ -1,23 +1,47 @@
-// Ne engedj jobb kattintást
-document.addEventListener('contextmenu', (e) => {
-    e.preventDefault(); // Megakadályozza a jobb kattintás menüt
-    reportBadActivity('Jobb kattintás blokkolva');
-});
-
-// Ne engedj Ctrl+U vagy Ctrl+Shift+I kombinációt
 document.addEventListener('keydown', (e) => {
     // Ctrl+U (forrás megtekintés)
     if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
         e.preventDefault();
-        reportBadActivity('Ctrl+U kombináció blokkolva');
+        reportBadActivity('Ctrl+U kombináció blokkolva (forráskód megtekintés)');
     }
 
     // Ctrl+Shift+I (fejlesztői eszközök)
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
         e.preventDefault();
-        reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
+        reportBadActivity('Ctrl+Shift+I kombináció blokkolva (fejlesztői eszközök)');
+    }
+
+    // Ctrl+Shift+J (fejlesztői konzol)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+Shift+J kombináció blokkolva (fejlesztői konzol)');
+    }
+
+    // F12 (fejlesztői eszközök megnyitása)
+    if (e.key === 'F12') {
+        e.preventDefault();
+        reportBadActivity('F12 gomb blokkolva (fejlesztői eszközök)');
+    }
+
+    // Ctrl+S (mentés)
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+S kombináció blokkolva (oldal mentése)');
+    }
+
+    // Ctrl+P (nyomtatás)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        reportBadActivity('Ctrl+P kombináció blokkolva (oldal nyomtatása)');
     }
 });
+
+document.addEventListener('contextmenu', (e) => {
+    // Jobb kattintás letiltása
+    e.preventDefault();
+    reportBadActivity('Jobb kattintás blokkolva (kontextus menü)');
+});
+
 
 // Rossz tevékenység logolása
 function reportBadActivity(reason) {
@@ -77,3 +101,4 @@ if (isDesktop()) {
 }
 
 // ---------------- MÓDOSÍTOTT RÉSZ VÉGE ----------------
+
