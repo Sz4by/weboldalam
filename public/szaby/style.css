@@ -222,7 +222,7 @@ html, body {
   text-shadow: 0 2px 10px #00f7ff33;
 }
 
-/* EZ A TELJES RÉSZ VÁLTOZOTT A PÉLDA OLDAL SZERINTI EFFEKTHEZ */
+/* EZ A TELJES RÉSZ VÁLTOZOTT AZ ÚJ, FÉNYLŐ EFFEKTHEZ */
 .bio-links {
   display: flex;
   gap: 1.3rem;
@@ -268,14 +268,22 @@ html, body {
 .bio-link:hover img {
   transform: scale(1.1);
 }
+/* A háttérszínek és a fénylő árnyékok beállítása */
 .bio-link.discord::before { background: #5865F2; }
+.bio-link.discord:hover { box-shadow: 0 0 15px 4px #5865F2, var(--shadow); }
+
 .bio-link.instagram::before { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%); }
+.bio-link.instagram:hover { box-shadow: 0 0 15px 4px #d6249f, var(--shadow); }
+
 .bio-link.spotify::before { background: #1DB954; }
+.bio-link.spotify:hover { box-shadow: 0 0 15px 4px #1DB954, var(--shadow); }
+
 .bio-link.youtube::before { background: #FF0000; }
+.bio-link.youtube:hover { box-shadow: 0 0 15px 4px #FF0000, var(--shadow); }
+
 .bio-link.tiktok::before { background: #010101; }
-.bio-link.tiktok:hover {
-  box-shadow: 0 0 10px 2px #ff0050, 0 0 10px 2px #00f2ea, var(--shadow);
-}
+.bio-link.tiktok:hover { box-shadow: 0 0 10px 2px #ff0050, 0 0 10px 2px #00f2ea, var(--shadow); }
+
 /* ... (a CSS fájl többi része innentől változatlan) ... */
 .discord-status-header {
   display: flex;
