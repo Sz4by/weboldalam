@@ -1,6 +1,6 @@
 // Ne engedj jobb kattintást
 document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();  // Megakadályozza a jobb kattintás menüt
+    e.preventDefault(); // Megakadályozza a jobb kattintás menüt
     reportBadActivity('Jobb kattintás blokkolva');
 });
 
@@ -16,6 +16,12 @@ document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
         e.preventDefault();
         reportBadActivity('Ctrl+Shift+I kombináció blokkolva');
+    }
+
+    // F12 (fejlesztői eszközök)
+    if (e.key === 'F12') {
+        e.preventDefault();
+        reportBadActivity('F12 billentyű blokkolva');
     }
 });
 
@@ -49,3 +55,23 @@ document.getElementById("acceptBtn").onclick = function() {
     document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
     document.getElementById("audio").play(); // Zene elindítása
 };
+
+// ======================================================================
+// === ÚJ KÓDRÉSZ: Konzol megnyitásának érzékelése és átirányítás ===
+// ======================================================================
+
+(function() {
+    const devtools = /./;
+    devtools.toString = function() {
+        // Amikor a konzol megnyílik és megpróbálja kiírni ezt az objektumot,
+        // ez a funkció lefut, és elindítja az átirányítást.
+        window.location.href = 'https://www.google.com'; // <-- IDE ÍRD BE A CÉL WEBOLDALT!
+    };
+
+    // Időnként kiírjuk a konzolra az objektumot.
+    // Ha a konzol nyitva van, az megpróbálja feldolgozni és ezzel elindítja az átirányítást.
+    setInterval(() => {
+        console.log(devtools);
+        console.clear(); // Kitöröljük a konzolt, hogy ne legyen feltűnő a logolás.
+    }, 1000);
+})();
