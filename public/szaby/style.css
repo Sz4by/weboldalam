@@ -419,7 +419,7 @@ html, body {
   background-color: rgba(0, 0, 0, 0.85); /* Sötétebb fekete háttér */
   justify-content: center;
   align-items: center;
-  z-index: 10; /* Legyen felül minden más elem fölött */
+  z-index: 1001; /* EZ VÁLTOZOTT: Legyen a legtetején */
 }
 
 .modal-content {
@@ -459,30 +459,36 @@ button:hover {
   pointer-events: none;
 }
 
-/* === ÚJ RÉSZ: LÁTOGATÓSZÁMLÁLÓ STÍLUSOK === */
+/* === LÁTOGATÓSZÁMLÁLÓ STÍLUSOK (MÓDOSÍTVA: FELÜL, FÉLIG ÁTLÁTSZÓ) === */
 #view-counter {
   position: fixed;
-  bottom: 20px;
-  left: 20px; /* Bal alsó sarokba helyezve */
-  background-color: rgba(10, 10, 10, 0.85);
-  color: #ffffff;
-  border-radius: 50px;
+  top: 20px; /* Felülre pozícionálva */
+  left: 20px; /* Balra igazítva */
+  
+  /* ÁTTETSZŐ HÁTTÉR, A TÖBBI KÁRTYÁHOZ HASONLÓAN */
+  background: var(--glass-bg); /* A globális áttetsző háttér változó használata */
+  backdrop-filter: blur(var(--blur)); /* A globális blur változó használata */
+  -webkit-backdrop-filter: blur(var(--blur)); /* Safari kompatibilitás */
+  
+  color: var(--primary); /* A globális elsődleges szín használata */
+  border-radius: 50px; /* Kerek forma */
   padding: 8px 16px;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', Arial, sans-serif; /* A fő betűtípus használata */
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.15), 0 0 5px rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 1000;
+  
+  /* Árnyék a többi kártyával összhangban */
+  box-shadow: var(--shadow); 
+  border: 1px solid var(--music-accent); /* A kártyákhoz hasonló keret */
+  
+  z-index: 1000; /* Ez a modal alatt lesz */
   transition: transform 0.2s ease-out;
 }
 
 #view-counter:hover {
   transform: scale(1.05);
 }
-/* === ÚJ RÉSZ VÉGE === */
+/* === LÁTOGATÓSZÁMLÁLÓ STÍLUSOK VÉGE === */
