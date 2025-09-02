@@ -28,6 +28,12 @@ a, button {
   cursor: none;
 }
 
+/* === ÚJ RÉSZ: AZ ÖSSZES KÉP HÚZÁSÁNAK LETILTÁSA === */
+img {
+  -webkit-user-drag: none; /* Safari és régebbi Chrome böngészőkhöz */
+  user-drag: none;         /* Modern böngészők */
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
