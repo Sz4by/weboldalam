@@ -47,36 +47,28 @@ const currentTime = document.getElementById('currentTime');
 const duration = document.getElementById('duration');
 const musicCover = document.getElementById('musicCover');
 
-// Kezdeti hangerő beállítása, ha a zene elindul
-audio.volume = 0.2; // 20% hangerő
+audio.volume = 0.2;
 
-// Várj, amíg az oldal teljesen betöltődik
 document.addEventListener('DOMContentLoaded', () => {
-    // Modal megjelenítése az oldal betöltődése után
-    document.getElementById("blockModal").style.display = "flex"; // Modal megjelenítése
+    document.getElementById("blockModal").style.display = "flex";
 
-    // Elfogadom gombra kattintás
     document.getElementById("acceptBtn").onclick = function() {
-        document.getElementById("blockModal").style.display = "none"; // Modal eltüntetése
-        document.getElementById("audio").play(); // Zene elindítása
+        document.getElementById("blockModal").style.display = "none";
+        document.getElementById("audio").play();
     };
 });
 
-// Kezdeti hangerő beállítása
-const volumeBtn = document.getElementById('volumeBtn'); // Hangerő gomb
-const volumeSliderWrap = document.getElementById('volumeSliderWrap'); // Hangerő csúszka
-const volumeSlider = document.getElementById('volumeSlider'); // Csúszka értéke
+const volumeBtn = document.getElementById('volumeBtn');
+const volumeSliderWrap = document.getElementById('volumeSliderWrap');
+const volumeSlider = document.getElementById('volumeSlider');
 
-// Kezdeti hangerő beállítása
-audio.volume = 0.2;  // 20%-ra állítja a hangerőt
-volumeSlider.value = 0.2;  // A csúszka értéke is 20%-ra van állítva
+audio.volume = 0.2;
+volumeSlider.value = 0.2;
 
-// Hangerő szabályozó megjelenítése
 volumeBtn.addEventListener('click', () => {
-    volumeSliderWrap.classList.toggle('active'); // Az active osztály hozzáadása a csúszkához
+    volumeSliderWrap.classList.toggle('active');
 });
 
-// Hangerő beállítása a csúszka értéke alapján
 volumeSlider.addEventListener('input', () => {
     audio.volume = volumeSlider.value;
 });
@@ -86,40 +78,28 @@ function loadSong(idx, autoPlay = false) {
   musicTitle.textContent = playlist[idx].title;
   if (musicCover) {
     musicCover.src = playlist[idx].cover || 'images/default_cover.jpg';
-    musicCover.classList.remove('playing'); // Az osztályt is hozzáadjuk a borítóképhez
+    musicCover.classList.remove('playing');
   }
   playBtn.innerHTML = `<i class="fas fa-play"></i>`;
   if (autoPlay) audio.play();
 }
 
-// Zene betöltése de nem indul el automatikusan
 window.addEventListener('load', () => {
-  loadSong(current, false); // false = ne induljon automatikusan
-  audio.muted = false;      // ne legyen néma alapból
+  loadSong(current, false);
+  audio.muted = false;
 });
 
-// Ha véget ér a zene
 audio.addEventListener('ended', () => {
   if (musicCover) musicCover.classList.remove('playing');
-
-  if (current < playlist.length - 1) {
-    // Ha van következő zene, folytatjuk azzal
-    current++;
-    loadSong(current, true);
-  } else {
-    // Ha nincs több zene, újraindítjuk az elsőt
-    current = 0;
-    loadSong(current, true);
-  }
+  current = (current + 1) % playlist.length;
+  loadSong(current, true);
 });
 
 playBtn.onclick = function () {
   if (audio.paused) {
     audio.play();
-    playBtn.innerHTML = `<i class="fas fa-pause"></i>`;
   } else {
     audio.pause();
-    playBtn.innerHTML = `<i class="fas fa-play"></i>`;
   }
 };
 
@@ -228,7 +208,6 @@ function updateDiscordStatus(data) {
   stateElem.className = `discord-status-state ${discord_status}`;
 }
 
-// Frissítés 15 másodpercenként
 setInterval(fetchDiscordStatus, 15000);
 fetchDiscordStatus();
 
@@ -236,28 +215,43 @@ fetchDiscordStatus();
 // === LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
 document.addEventListener("DOMContentLoaded", function() {
     
-    // A te egyedi azonosítóid
     const namespace = 'szaby-is-a-dev'; 
     const key = 'latogatok';
 
     async function updateCounter() {
       try {
-        // JAVÍTOTT RÉSZ: A helyes URL formátumot használjuk az új szolgáltatáshoz
         const response = await fetch(`https://api.counterapi.dev/v1/${namespace}/${key}/up`);
         const data = await response.json();
         
-        // A JSON válaszban a számláló a "count" kulcs alatt van
         const countElement = document.getElementById('view-count-number');
         countElement.innerText = data.count;
 
       } catch (error) {
-        // Hiba esetén egy vonalat teszünk a szám helyére.
         console.error("Számláló hiba:", error);
         const countElement = document.getElementById('view-count-number');
         countElement.innerText = '–';
       }
     }
-
-    // Futtassuk a számláló frissítését
     updateCounter();
+});
+
+
+// === ÚJ RÉSZ: EGYEDI EGÉRMUTATÓ MOZGATÁSA ===
+document.addEventListener("DOMContentLoaded", function() {
+  const cursor = document.querySelector('.custom-cursor');
+
+  if (cursor) {
+    window.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+
+    document.addEventListener('mouseleave', () => {
+        cursor.style.display = 'none';
+    });
+
+    document.addEventListener('mouseenter', () => {
+        cursor.style.display = 'block';
+    });
+  }
 });
