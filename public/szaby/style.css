@@ -28,10 +28,10 @@ a, button {
   cursor: none;
 }
 
-/* === ÚJ RÉSZ: AZ ÖSSZES KÉP HÚZÁSÁNAK LETILTÁSA === */
-img {
-  -webkit-user-drag: none; /* Safari és régebbi Chrome böngészőkhöz */
-  user-drag: none;         /* Modern böngészők */
+/* === KÉPEK ÉS LINKEK HÚZÁSÁNAK LETILTÁSA (MÓDOSÍTVA) === */
+img, a {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 html, body {
