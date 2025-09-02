@@ -215,7 +215,7 @@ fetchDiscordStatus();
 // === LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
 document.addEventListener("DOMContentLoaded", function() {
     
-    const namespace = 'szaby-is-a-dev'; 
+    const namespace = 'szaby-is-a-dev';  
     const key = 'latogatok';
 
     async function updateCounter() {
@@ -236,22 +236,35 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
-// === ÚJ RÉSZ: EGYEDI EGÉRMUTATÓ MOZGATÁSA ===
+// === ÚJ, OPTIMALIZÁLT RÉSZ: EGYEDI EGÉRMUTATÓ MOZGATÁSA ===
 document.addEventListener("DOMContentLoaded", function() {
   const cursor = document.querySelector('.custom-cursor');
 
   if (cursor) {
+    // A kurzor pozíciójának frissítése a hatékonyabb 'transform' segítségével
     window.addEventListener('mousemove', e => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
+      // A CSS-ben lévő 'scale' értéket is figyelembe kell vennünk,
+      // ezért a transformot itt állítjuk össze teljesen.
+      const isHovering = cursor.classList.contains('hover-effect');
+      const scale = isHovering ? 'scale(0.7)' : 'scale(1)';
+      
+      // Beállítjuk a transzformációt az egér X és Y koordinátái, és a méretezés alapján
+      cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px) ${scale}`;
     });
 
+    // Kezeljük, ha az egér elhagyja vagy belép az ablakba
     document.addEventListener('mouseleave', () => {
         cursor.style.display = 'none';
     });
-
     document.addEventListener('mouseenter', () => {
         cursor.style.display = 'block';
+    });
+    
+    // Kezeljük a hover effektust a linkeken és gombokon
+    const interactiveElements = document.querySelectorAll('a, button, .progress-bar, .player-btn, .bio-link');
+    interactiveElements.forEach(el => {
+        el.addEventListener('mouseover', () => cursor.classList.add('hover-effect'));
+        el.addEventListener('mouseout', () => cursor.classList.remove('hover-effect'));
     });
   }
 });
