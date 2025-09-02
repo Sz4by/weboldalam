@@ -236,21 +236,21 @@ fetchDiscordStatus();
 // === LÁTOGATÓSZÁMLÁLÓ MŰKÖDÉSE ===
 document.addEventListener("DOMContentLoaded", function() {
     
-    // A te egyedi azonosítóid a CountAPI szolgáltatáshoz
+    // A te egyedi azonosítóid
     const namespace = 'szaby-is-a-dev'; 
     const key = 'latogatok';
 
     async function updateCounter() {
       try {
-        const response = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
+        // EZ AZ EGY SOR VÁLTOZOTT! A régi, nem működő szolgáltatást cseréljük le egy újra.
+        const response = await fetch(`https://api.counterapi.dev/hit/${namespace}/${key}`);
         const data = await response.json();
         
         const countElement = document.getElementById('view-count-number');
         countElement.innerText = data.value;
 
       } catch (error) {
-        // EZT A RÉSZT MÓDOSÍTOTTAM:
-        // Hiba esetén már nem elrejtjük a dobozt, hanem egy vonalat teszünk a szám helyére.
+        // Hiba esetén egy vonalat teszünk a szám helyére.
         console.error("Számláló hiba:", error);
         const countElement = document.getElementById('view-count-number');
         countElement.innerText = '–';
