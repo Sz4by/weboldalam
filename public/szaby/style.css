@@ -22,6 +22,12 @@ body {
   /* EZ AZ ÚJ RÉSZ: ELREJTJÜK AZ ALAPÉRTELMEZETT EGERET */
   cursor: none;
 }
+
+/* === HOZZÁADVA: Biztosítjuk, hogy linkeken és gombokon se jelenjen meg a rendszer egere === */
+a, button {
+  cursor: none;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -35,6 +41,7 @@ html, body {
   }
 }
 
+/* === A DUPLIKÁLT RÉSZ TÖRÖLVE, EZ A VÉGLEGES === */
 .bg-video {
   position: fixed;
   top: 0;
@@ -43,8 +50,8 @@ html, body {
   height: 100vh;
   object-fit: cover;
   z-index: 0;
-  filter: blur(4px) brightness(0.7);
-  opacity: 0.82;
+  filter: brightness(0.4) blur(4px);
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -156,7 +163,7 @@ html, body {
   font-size: 1.4em;
   width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; outline: none;
+  outline: none;
   transition: background .14s, box-shadow .18s;
 }
 .player-btn:active { background: #d5fafd; }
@@ -164,7 +171,7 @@ html, body {
   width: 95%; height: 7px; border-radius: 4px; background: #232d34;
   margin-bottom: 1.0em;
   margin-top: -0.4em;
-  cursor: pointer; position: relative; overflow: hidden;
+  position: relative; overflow: hidden;
   box-shadow: 0 0 6px #56e0f877;
 }
 .progress { height: 100%; background: linear-gradient(90deg, #56e0f8 40%, #a8f3ff 100%); border-radius: 4px; width: 0; transition: width .15s; }
@@ -345,7 +352,6 @@ html, body {
   box-shadow: 0 0 12px #56e0f855;
   font-size: 1.18em;
   color: #232d34;
-  cursor: pointer;
   outline: none;
 }
 
@@ -471,25 +477,10 @@ button {
   color: white;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
 }
 
 button:hover {
   background-color: #555;
-}
-
-/* Háttér sötétítése a videóval */
-.bg-video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  z-index: 0;
-  filter: brightness(0.4) blur(4px);
-  opacity: 0.9;
-  pointer-events: none;
 }
 
 /* LÁTOGATÓSZÁMLÁLÓ STÍLUSOK */
@@ -509,7 +500,7 @@ button:hover {
   font-family: 'Inter', Arial, sans-serif;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: var(--shadow); 
+  box-shadow: var(--shadow);  
   border: 1px solid var(--music-accent);
   z-index: 1000;
   transition: transform 0.2s ease-out;
@@ -519,23 +510,25 @@ button:hover {
   transform: scale(1.05);
 }
 
-/* === ÚJ RÉSZ: EGYEDI EGÉRMUTATÓ (CUSTOM CURSOR) === */
+/* === MÓDOSÍTOTT ÉS OPTIMALIZÁLT EGYEDI EGÉRMUTATÓ === */
 .custom-cursor {
   position: fixed;
   width: 25px;
   height: 25px;
   border: 2px solid var(--primary);
   border-radius: 50%;
-  pointer-events: none; 
-  left: -100px; 
-  top: -100px;
-  transform: translate(-50%, -50%);
-  transition: transform 0.1s ease-out;
+  pointer-events: none;
+  left: 0; /* Módosítva a JS-hez */
+  top: 0;  /* Módosítva a JS-hez */
+  transform: translate(-100px, -100px); /* Kezdeti pozíció, amit a JS felülír */
+  transition: transform 0.1s ease-out, background-color 0.2s, width 0.2s, height 0.2s; /* Átmenet a transform-ra */
   z-index: 9999;
   box-shadow: 0 0 15px 5px rgba(183, 250, 255, 0.3), 0 0 5px 2px rgba(183, 250, 255, 0.5);
   background: rgba(183, 250, 255, 0.1);
 }
-a:hover ~ .custom-cursor, button:hover ~ .custom-cursor {
-    transform: translate(-50%, -50%) scale(0.7);
-    background: rgba(183, 250, 255, 0.3);
+
+/* Új stílus a hover effektushoz, amit a JS kezel */
+.custom-cursor.hover-effect {
+  transform: scale(0.7); /* A JS a pozíciót ettől függetlenül kezeli */
+  background: rgba(183, 250, 255, 0.3);
 }
