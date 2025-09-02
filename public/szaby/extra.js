@@ -1,17 +1,3 @@
-// ======================================================================
-// === AZONNALI ÁTIRÁNYÍTÁS ===
-// ======================================================================
-
-// Ez a sor azonnal átirányít egy másik weboldalra, amint a böngésző beolvassa.
-// Emiatt az alatta lévő kódoknak nem lesz idejük lefutni.
-window.location.replace('https://www.google.com'); // <-- IDE ÍRD BE A CÉL WEBOLDALT!
-
-
-// ----------------------------------------------------------------------
-// AZ ALÁBBI KÓDOK MÁR NEM FOGNAK MŰKÖDNI AZ ÁTIRÁNYÍTÁS MIATT
-// ----------------------------------------------------------------------
-
-
 // Ne engedj jobb kattintást
 document.addEventListener('contextmenu', (e) => {
     e.preventDefault();  // Megakadályozza a jobb kattintás menüt
