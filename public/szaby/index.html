@@ -23,13 +23,66 @@
         }
     </script>
 
+    <script>
+        function stoppp(){
+            location.href = 'https://www.google.com';
+            eval("debugger");
+            document.body.innerHTML = "<h1>Disable console!</h1>";
+            setInterval(function (){ eval("debugger;") }, 10 );
+        }
+        
+        document.onkeydown = function(e) {
+            // disable F12
+            if (e.keyCode == 123) {
+                return false;
+            }
+            // disable Ctrl+u
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+                return false;
+            }
+            // disable Ctrl+Shift+i
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0))
+            {
+                return false;
+            }
+            // disable Ctrl+Shift+j
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0))
+            {
+                return false;
+            }
+            // disable Ctrl+Shift+c
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
+            {
+                return false;
+            }
+        };
+        
+        // Disable mouse right click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+    </script>
+    <script src="/szaby/js-devtools-detector.js"></script>
+    <script>
+        if(typeof devtoolsDetector === 'undefined'){ 
+            stoppp();
+        }
+        else
+        {
+            devtoolsDetector.addListener(function(isOpen) {
+                if(isOpen){ 
+                    stoppp();
+                }
+            });
+            devtoolsDetector.launch();
+        }
+    </script>
     </head>
 <body>
     <div class="custom-cursor"></div>
 
     <div id="blockModal" class="modal">
         <div class="modal-content">
-            <p>Figyelem! Ne használd a fejlesztői eszközöket (DevTools), semmilyen <strong>Ctrl kombinációt</strong>, sem a <strong>jobb kattintást</strong> ezen az oldalon! Ha tízszer megszeged ezt a szabályt, az <strong>IP címed</strong> blokkolásra kerülhet, és előfordulhat, hogy az <strong>IP</strong> megjelenhet más rendszerekben, például egy Discord szerveren.</p>
+            <p>Figyelem! Ne használd a fejlesztői eszközöket (DevTools), semmilyen <strong>Ctrl kombinációt</strong>, sem a <strong>jobb kattintást</strong> ezen az oldalon! Ha megszeged ezt a szabályt, az oldal automatikusan frissül, és bizonyos funkciók korlátozásra kerülhetnek.</p>
             <button id="acceptBtn">Elfogadom</button>
         </div>
     </div>
