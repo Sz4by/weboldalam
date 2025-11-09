@@ -147,7 +147,7 @@ loadSong(current);
 // ---- DISCORD STATUS FROM RENDER API ----
 async function fetchDiscordStatus() {
   try {
-    const response = await fetch('https://https://status-bot-5ipq.onrender.com/api/status');
+    const response = await fetch('https://status-bot-5ipq.onrender.com/api/status');
     const data = await response.json();
     updateDiscordStatus(data);
   } catch (error) {
