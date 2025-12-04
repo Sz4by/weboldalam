@@ -6,65 +6,63 @@
     <title>SZABY | RENDSZER AKTÍV</title>
     
     <noscript>
-        <meta http-equiv="refresh" content="0; url=https://www.google.com/hibaoldal.html">
+        <meta http-equiv="refresh" content="0; url=https://www.google.com">
     </noscript>
 
-    <script>
-        // Ha a külső védelmi script nem töltődne be
-        function scriptHiba() {
-            console.error("A védelmi szkript betöltése sikertelen! Átirányítás...");
-            window.location.href = 'https://www.google.com/hibaoldal.html';
-        }
+    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
 
-        // Ez a függvény fagyasztja le a böngészőt, ha DevTools-t észlel
-        function stoppp(){
-            // Azonnali átirányítás (opcionális, ha a fagyasztás nem elég)
-            // location.href = 'https://www.google.com'; 
+    <script>
+        // Ez a függvény végzi a büntetést (Átirányítás + Fagyasztás)
+        function stoppp() {
+            // AZONNALI ÁTIRÁNYÍTÁS (Ez hiányzott az előzőből)
+            window.location.href = 'https://www.google.com';
             
-            // Tartalom törlése
-            document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>A RENDSZER ÉRZÉKELTE A BEHATOLÁST.<br>Konzol tiltva.</h1>";
+            // Ha valamiért lassú lenne az átirányítás, töröljük a tartalmat
+            document.body.innerHTML = "";
+            document.body.style.backgroundColor = "black";
             
-            // Végtelen debugger ciklus (ez fagyaszt)
-            setInterval(function (){ eval("debugger;") }, 10 );
-            eval("debugger");
+            // És lefagyasztjuk a böngészőt (Extra büntetés)
+            setInterval(function (){ 
+                eval("debugger;"); 
+            }, 10);
+            eval("debugger;");
         }
         
         // Billentyűkombinációk tiltása
         document.onkeydown = function(e) {
-            // F12
-            if (e.keyCode == 123) { return false; }
-            // Ctrl+U (Forráskód)
-            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
-            // Ctrl+Shift+I (Vizsgálat)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
-            // Ctrl+Shift+J (Konzol)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
-            // Ctrl+Shift+C (Elem kiválasztása)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; }
+            if (
+                e.keyCode == 123 || // F12
+                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Ctrl+U
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))    // Ctrl+Shift+C
+            ) {
+                // Ha megnyomja, azonnal büntetés
+                stoppp(); 
+                return false;
+            }
         };
         
         // Jobb klikk tiltása
-        document.addEventListener('contextmenu', event => event.preventDefault());
-    </script>
+        document.addEventListener('contextmenu', event => {
+            event.preventDefault();
+            // Opcionális: Jobb klikkre is átirányíthatod, ha akarod (vedd ki a // jelet a köv sorból)
+            // stoppp(); 
+        });
 
-    <script src="/szaby/js-devtools-detector.js" onerror="scriptHiba()"></script>
-    
-    <script>
-        // Ellenőrzés, hogy betöltött-e a detector
-        if(typeof devtoolsDetector === 'undefined'){ 
-            // Ha nem töltött be (pl. blokkolták), akkor is STOP
-            // Megjegyzés: Ha még nem hoztad létre a fájlt, ezt a sort vedd ki tesztelés alatt!
-             console.log("DevTools detector hiányzik, de a rendszer fut.");
-             // stoppp(); // Aktiváld ezt, ha már megvan a fájl!
-        }
-        else
-        {
+        // Érzékelő indítása
+        // Ellenőrizzük, hogy betöltött-e a könyvtár
+        if (typeof devtoolsDetector !== 'undefined') {
             devtoolsDetector.addListener(function(isOpen) {
-                if(isOpen){ 
-                    stoppp();
+                if (isOpen) {
+                    stoppp(); // Ha nyitva van (akár telefonon), azonnal STOP
                 }
             });
             devtoolsDetector.launch();
+        } else {
+            // Ha a védelmi scriptet blokkolják (pl. AdBlock), akkor is STOP
+            console.error("Védelmi hiba!");
+            stoppp();
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
