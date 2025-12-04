@@ -226,3 +226,9 @@ window.onload = () => {
         });
     });
 };
+
+/* --- HÚZÁS (DRAG & DROP) TILTÁSA --- */
+document.addEventListener('dragstart', function(event) {
+    event.preventDefault();
+    return false;
+});
