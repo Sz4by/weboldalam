@@ -3,8 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>SZABY | RENDSZER AKTÍV</title>
     
+    <style>
+        html { display: none; background-color: black; }
+    </style>
+
     <noscript>
         <meta http-equiv="refresh" content="0; url=https://www.google.com">
     </noscript>
@@ -12,58 +21,78 @@
     <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
 
     <script>
-        // Ez a függvény végzi a büntetést (Átirányítás + Fagyasztás)
+        // === 1. AZONNALI ELLENŐRZÉS ===
+        // Ha már egyszer ki volt tiltva ebben a munkamenetben, azonnal dobjuk
+        try {
+            if (sessionStorage.getItem('banned') === 'true') {
+                window.location.replace("https://www.google.com");
+            }
+        } catch(e) {}
+
+        // === 2. BÜNTETŐ FÜGGVÉNY ===
         function stoppp() {
-            // AZONNALI ÁTIRÁNYÍTÁS (Ez hiányzott az előzőből)
-            window.location.href = 'https://www.google.com';
+            try {
+                // Megjelöljük, hogy rosszban sántikál
+                sessionStorage.setItem('banned', 'true');
+            } catch(e) {}
             
-            // Ha valamiért lassú lenne az átirányítás, töröljük a tartalmat
-            document.body.innerHTML = "";
-            document.body.style.backgroundColor = "black";
+            // Feketére festjük a hátteret
+            document.documentElement.innerHTML = ""; 
             
-            // És lefagyasztjuk a böngészőt (Extra büntetés)
-            setInterval(function (){ 
-                eval("debugger;"); 
-            }, 10);
-            eval("debugger;");
+            // A 'replace' miatt a vissza gomb nem fog működni (felülírja az előzményt)
+            window.location.replace('https://www.google.com');
         }
+
+        // === 3. OLDAL MEGJELENÍTÉSE (Ha tiszta) ===
+        // Csak akkor mutatjuk meg az oldalt, ha eddig eljutott a kód
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!sessionStorage.getItem('banned')) {
+                document.documentElement.style.display = 'block';
+            }
+        });
         
-        // Billentyűkombinációk tiltása
+        // Ha valamiért lassú a DOMContentLoaded, egy timeout is megpróbálja megjeleníteni
+        setTimeout(() => {
+            if (!sessionStorage.getItem('banned')) document.documentElement.style.display = 'block';
+        }, 100);
+
+        // === 4. BILLENTYŰZET VÉDELEM ===
         document.onkeydown = function(e) {
             if (
                 e.keyCode == 123 || // F12
-                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Ctrl+U
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))    // Ctrl+Shift+C
+                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
             ) {
-                // Ha megnyomja, azonnal büntetés
                 stoppp(); 
                 return false;
             }
         };
         
-        // Jobb klikk tiltása
-        document.addEventListener('contextmenu', event => {
-            event.preventDefault();
-            // Opcionális: Jobb klikkre is átirányíthatod, ha akarod (vedd ki a // jelet a köv sorból)
-            // stoppp(); 
-        });
+        document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // Érzékelő indítása
-        // Ellenőrizzük, hogy betöltött-e a könyvtár
+        // === 5. DEVTOOLS DETEKTOR INDÍTÁSA ===
         if (typeof devtoolsDetector !== 'undefined') {
             devtoolsDetector.addListener(function(isOpen) {
                 if (isOpen) {
-                    stoppp(); // Ha nyitva van (akár telefonon), azonnal STOP
+                    stoppp();
                 }
             });
             devtoolsDetector.launch();
         } else {
-            // Ha a védelmi scriptet blokkolják (pl. AdBlock), akkor is STOP
-            console.error("Védelmi hiba!");
+            // Ha blokkolják a szkriptet, akkor is büntetés
             stoppp();
         }
+
+        // === 6. VISSZA GOMB KEZELÉSE (PageShow) ===
+        // Ez akkor fut le, ha a böngésző memóriából (cache) tölti vissza az oldalt
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || sessionStorage.getItem('banned') === 'true') {
+                // Kényszerített újratöltés -> ami újra lefuttatja az ellenőrzést -> ami kidobja
+                window.location.reload(); 
+            }
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -197,6 +226,7 @@
             </button>
         </div>
     </div>
+    
     <script src="/szaby/script.js"></script>
     <script src="/szaby/extra.js" onerror="scriptHiba()"></script>
 </body>
