@@ -13,6 +13,8 @@ const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
+// --- ÚJ VÁLTOZÓ: A titkos számláló link ---
+const COUNTER_API_URL = process.env.COUNTER_API_URL; 
 
 /* =========================
    IP normalizálás + IP lekérés
@@ -84,6 +86,7 @@ function recordBadAttempt(ip) {
   badCombAttempts.set(ip, data);
   return data.count;
 }
+
 // =========================
 // JSON fájl beolvasása a véglegesen tiltott IP-khez
 // =========================
@@ -99,6 +102,14 @@ function readBannedIPs() {
 function writeBannedIPs(bannedData) {
   fs.writeFileSync('banned-permanent-ips.json', JSON.stringify(bannedData, null, 2), 'utf8');
 }
+
+// Memóriában tárolt véglegesen tiltott IP-k inicializálása
+let permanentBannedIPs = [];
+const initBannedData = readBannedIPs();
+if(initBannedData && initBannedData.ips) {
+    permanentBannedIPs = initBannedData.ips;
+}
+
 /* =========================
    RÉSZLETES GEO LOG LISTÁK (3 KÜLÖN)
    ========================= */
@@ -355,6 +366,28 @@ app.use(async (req, res, next) => {
 // =========================
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+/* =========================
+//   TITKOS SZÁMLÁLÓ PROXY (ÚJ RÉSZ)
+// ========================= */
+app.get('/api/counter', async (req, res) => {
+  try {
+    // Ellenőrizzük, hogy be van-e állítva az ENV
+    if (!COUNTER_API_URL) {
+        console.error("COUNTER_API_URL hiányzik az .env fájlból!");
+        return res.status(500).json({ error: 'Server configuration error' });
+    }
+    
+    // Ez hívja meg a titkos .env linket a háttérben
+    const response = await axios.get(COUNTER_API_URL);
+    res.json(response.data);
+  } catch (error) {
+    console.error("Számláló hiba:", error.message);
+    res.status(500).json({ error: 'Számláló hiba' });
+  }
+});
+
+
 // =========================
 // Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
 // =========================
@@ -362,9 +395,6 @@ app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
   return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
 });
-
-
-
 
 // =========================
 // Admin – böngészős felület (GET /admin)
@@ -395,8 +425,7 @@ app.get('/admin', (req, res) => {
       <button type="submit" data-action="ban">IP BAN 24h</button>
       <button type="submit" data-action="unban">IP UNBAN 24h</button>
       <button type="submit" data-action="permanent-ban">IP VÉGLEGES BAN</button>
-      <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> <!-- Végleges tiltás feloldása -->
-    </div>
+      <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> </div>
   </form>
   <div class="msg" id="msg"></div>
   
@@ -467,8 +496,6 @@ app.post('/admin/unban/form', express.urlencoded({ extended: true }), (req, res)
   }
 });
 
-// Memóriában tárolt véglegesen tiltott IP-k
-let permanentBannedIPs = [];
 
 // =========================
 // IP végleges tiltása
@@ -492,7 +519,9 @@ app.post('/admin/permanent-ban/form', express.urlencoded({ extended: true }), (r
   writeBannedIPs(bannedData);
 
   // Véglegesen hozzáadjuk az IP-t a memóriához
-  permanentBannedIPs.push(targetIp);
+  if (!permanentBannedIPs.includes(targetIp)) {
+      permanentBannedIPs.push(targetIp);
+  }
 
   res.send(`✅ IP ${targetIp} véglegesen tiltva lett.`);
 
@@ -590,17 +619,9 @@ app.post('/report', express.json(), async (req, res) => {
 });
     
 /* =========================
-// Statikus fájlok
+// Statikus fájlok (újra, hogy biztos minden el legyen érve)
 // ========================= */
 app.use(express.static(path.join(__dirname, 'public')));
-
-/* =========================
-// Főoldal: mindig szaby/index.html (URL-ben NINCS /szaby)
-// ========================= */
-app.get('/', (req, res) => {
-  const filePath = path.join(__dirname, 'public', 'szaby', 'index.html');
-  return fs.existsSync(filePath) ? res.sendFile(filePath) : res.status(404).send('Főoldal nem található');
-});
 
 /* =========================
 // 404
