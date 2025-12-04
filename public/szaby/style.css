@@ -1,540 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
 :root {
-  --primary: #b7faff; /* Egységes világos kék szín */
-  --accent: #ff3b3f;
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --shadow: 0 0 20px 0 #56e0f822, 0 8px 60px #67e2f544, 0 0 8px #67e2f577;
-  --blur: 16px;
-  --music-accent: #56e0f8;
-  --status-accent: #67e2f5;
+    --neon-cyan: #00f3ff;
+    --neon-magenta: #ff0055;
+    --bg-dark: #050505;
 }
+
 body {
-  margin: 0;
-  background: #161a1e;
-  color: var(--primary);
-  font-family: 'Inter', Arial, sans-serif;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  
-  /* EZ AZ ÚJ RÉSZ: ELREJTJÜK AZ ALAPÉRTELMEZETT EGERET */
-  cursor: none;
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    font-family: 'Rajdhani', sans-serif;
+    color: white;
+    user-select: none;
+    cursor: none; 
 }
 
-/* === HOZZÁADVA: Biztosítjuk, hogy linkeken és gombokon se jelenjen meg a rendszer egere === */
-a, button {
-  cursor: none;
+/* --- EGYEDI KURZOR --- */
+#custom-cursor {
+    position: fixed; top: 0; left: 0; width: 20px; height: 20px;
+    border: 1px solid var(--neon-cyan); background: rgba(0, 243, 255, 0.1);
+    transform: translate(-50%, -50%) rotate(45deg); pointer-events: none; z-index: 9999;
+    box-shadow: 0 0 10px var(--neon-cyan); border-radius: 5px; transition: width 0.1s, height 0.1s;
+}
+#custom-cursor::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; background: white; border-radius: 50%; }
+#custom-cursor.clicking { width: 15px; height: 15px; background: var(--neon-magenta); border-color: var(--neon-magenta); }
+#custom-cursor.hovering { width: 30px; height: 30px; background: rgba(0, 243, 255, 0.2); border-style: dashed; border-radius: 50%; animation: spin 4s linear infinite; }
+@keyframes spin { 100% { transform: translate(-50%, -50%) rotate(405deg); } }
+
+/* Háttér */
+#starfield-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+#ui-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; }
+
+/* Fő Kártya */
+.holo-card {
+    width: 90%; max-width: 950px;
+    background: rgba(10, 10, 15, 0.75); backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 243, 255, 0.1);
+    border-radius: 35px;
+    padding: 40px; box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+    position: relative; cursor: none; 
 }
 
-/* === KÉPEK ÉS LINKEK HÚZÁSÁNAK LETILTÁSA (MÓDOSÍTVA) === */
-img, a {
-  -webkit-user-drag: none;
-  user-drag: none;
+/* TECH SARKOK */
+.corner {
+    position: absolute; width: 50px; height: 50px;
+    border-color: var(--neon-cyan); border-style: solid; transition: 0.3s;
+    border-width: 0; box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); opacity: 1; z-index: 20;
+}
+.corner::after { content: ''; position: absolute; width: 6px; height: 6px; background: var(--neon-cyan); border-radius: 50%; box-shadow: 0 0 8px var(--neon-cyan); }
+
+.tl { top: -2px; left: -2px; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 25px; } .tl::after { top: 10px; left: 10px; }
+.tr { top: -2px; right: -2px; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 25px; } .tr::after { top: 10px; right: 10px; }
+.bl { bottom: -2px; left: -2px; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 25px; border-color: var(--neon-magenta); box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); } .bl::after { bottom: 10px; left: 10px; background: var(--neon-magenta); box-shadow: 0 0 8px var(--neon-magenta); }
+.br { bottom: -2px; right: -2px; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 25px; border-color: var(--neon-magenta); box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); } .br::after { bottom: 10px; right: 10px; background: var(--neon-magenta); box-shadow: 0 0 8px var(--neon-magenta); }
+
+.holo-card:hover .tl { transform: translate(-5px, -5px); } .holo-card:hover .tr { transform: translate(5px, -5px); }
+.holo-card:hover .bl { transform: translate(-5px, 5px); } .holo-card:hover .br { transform: translate(5px, 5px); }
+
+/* Stílusok */
+.glitch { font-family: 'Orbitron', sans-serif; font-weight: 900; position: relative; letter-spacing: 0.1em; }
+.profile-img-container { width: 160px; height: 160px; border-radius: 50%; padding: 4px; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta)); box-shadow: 0 0 25px rgba(0, 243, 255, 0.4); }
+.profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid #050505; background: #000; }
+.cyber-btn { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; cursor: none; border-radius: 50%; }
+.cyber-btn:hover { background: var(--neon-cyan); color: black; transform: scale(1.1); }
+.activity-item { display: flex; gap: 12px; align-items: center; background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 10px; margin-top: 8px; border-left: 3px solid transparent; }
+.activity-item.game { border-left-color: var(--neon-cyan); }
+.activity-item.spotify { border-left-color: #1db954; display: block; }
+.rounded-box { border-radius: 25px; }
+
+/* Spotify Bar */
+.spotify-bar-container { width: 100%; height: 4px; background: #404040; border-radius: 2px; margin-top: 10px; position: relative; overflow: hidden; }
+.spotify-bar-fill { height: 100%; background: #1db954; border-radius: 2px; width: 0%; transition: width 0.5s linear; }
+.spotify-time-labels { display: flex; justify-content: space-between; font-size: 10px; color: #b3b3b3; margin-top: 4px; font-family: monospace; }
+
+/* --- MODAL (EREDETI DIZÁJN) --- */
+#welcome-overlay { 
+    position: fixed; inset: 0; z-index: 100; 
+    background: rgba(0,0,0,0.98); 
+    display: flex; align-items: center; justify-content: center; 
+    backdrop-filter: blur(5px); 
 }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
+.modal-box {
+    background-color: #000;
+    border: 2px solid #dc2626; /* Piros keret */
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    max-width: 450px;
+    box-shadow: 0 0 50px rgba(220,38,38,0.3);
 }
 
-/* --- új rész: mobilon engedjük a görgetést --- */
-@media (max-width: 768px) {
-  html, body {
-    overflow-y: auto;
-  }
+.start-btn { 
+    display: block; width: 100%; margin-top: 20px;
+    padding: 15px 0; 
+    font-family: 'Orbitron'; font-weight: bold; font-size: 1.1rem; 
+    color: var(--neon-cyan); 
+    background: transparent; 
+    border: 2px solid var(--neon-cyan); 
+    text-transform: uppercase; letter-spacing: 2px; 
+    transition: 0.3s; 
+    box-shadow: 0 0 15px var(--neon-cyan); 
+    cursor: none; 
+    border-radius: 30px; 
+}
+.start-btn:hover { 
+    background: var(--neon-cyan); 
+    color: black; 
+    box-shadow: 0 0 40px var(--neon-cyan); 
 }
 
-/* === A DUPLIKÁLT RÉSZ TÖRÖLVE, EZ A VÉGLEGES === */
-.bg-video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  z-index: 0;
-  filter: brightness(0.4) blur(4px);
-  opacity: 0.9;
-  pointer-events: none;
-}
+button { cursor: none; }
+input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; cursor: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: var(--neon-magenta); margin-top: -4px; }
+input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 10px; }
 
-#snow {
-  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
-  pointer-events: none; z-index: 1;
-}
-.main-flex {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 3rem;
-  margin-top: 2.6rem;
-  margin-bottom: 2.5rem;
-  width: 100%;
-  flex-wrap: wrap;
-}
-.profile-card {
-  background: var(--glass-bg);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow);
-  padding: 2rem 2rem 2.2rem 2rem;
-  min-width: 390px;
-  max-width: 440px;
-  width: 100%;
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(var(--blur));
-  border: 2px solid var(--music-accent);
-  gap: 0.8rem;
-  height: 532px;
-  box-sizing: border-box;
-  text-align: center;
-}
-.right-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 340px;
-  max-width: 420px;
-  width: 100%;
-  gap: 2rem;
-}
-.music-card {
-  background: var(--glass-bg);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow);
-  padding: 2rem 2rem 2.2rem 2rem;
-  border: 2px solid var(--music-accent);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  backdrop-filter: blur(var(--blur));
-  width: 100%;
-  min-height: 260px;
-  max-width: 420px;
-  margin-bottom: 0.5rem;
-  box-sizing: border-box;
-  position: relative;
-}
-.music-cover {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 0.7em;
-  margin-top: -0.3em;
-  box-shadow: 0 0 14px #45e5fc55, 0 4px 18px #67e2f522;
-  border: 2px solid #45e5fcaa;
-  background: #131d25;
-  display: block;
-  transition: box-shadow 0.22s, filter 0.24s;
-}
-.music-cover.playing {
-  animation: music-glow 1.6s infinite alternate;
-  filter: brightness(1.14) saturate(1.16);
-}
-@keyframes music-glow {
-  from {
-    box-shadow: 0 0 16px 6px #42e2ff77, 0 0 26px #67e2f544, 0 4px 18px #67e2f522;
-  }
-  to {
-    box-shadow: 0 0 40px 16px #8be8f7cc, 0 0 54px #67e2f5aa, 0 8px 32px #5ae2f577;
-  }
-}
-.music-title {
-  margin-top: 0.2em;
-  color: var(--primary);
-}
-.music-controls {
-  display: flex;
-  flex-direction: row;
-  gap: 1.6em;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.7em;
-  margin-top: 0.7em;
-}
-.player-btn {
-  background: linear-gradient(90deg,#fff 70%,#56e0f8 100%);
-  border: none;
-  color: #222;
-  border-radius: 50%;
-  box-shadow: 0 0 17px #56e0f844;
-  font-size: 1.4em;
-  width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  outline: none;
-  transition: background .14s, box-shadow .18s;
-}
-.player-btn:active { background: #d5fafd; }
-.progress-bar {
-  width: 95%; height: 7px; border-radius: 4px; background: #232d34;
-  margin-bottom: 1.0em;
-  margin-top: -0.4em;
-  position: relative; overflow: hidden;
-  box-shadow: 0 0 6px #56e0f877;
-}
-.progress { height: 100%; background: linear-gradient(90deg, #56e0f8 40%, #a8f3ff 100%); border-radius: 4px; width: 0; transition: width .15s; }
-.music-times {
-  width: 100%; display: flex; justify-content: space-between;
-  font-size: .88em; color: var(--primary); margin-bottom: .1em;
-  font-family: 'Orbitron', monospace;
-}
-.discord-status-card {
-  position: relative;
-  background: var(--glass-bg);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow);
-  padding: 1.5rem 2rem;
-  border: 2px solid var(--status-accent);
-  width: 100%;
-  max-width: 420px;
-  box-sizing: border-box;
-  margin-top: -1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.profile-visualizer {
-  position: relative;
-  width: 110px; height: 110px; margin-bottom: 4px;
-}
-.profile-img {
-  width: 104px; height: 104px; border-radius: 50%; object-fit: cover;
-  border: 3px solid var(--primary);
-  background: #162b38cc;
-  box-shadow: 0 0 0 8px #00f7ff33, 0 0 24px #00f7ff99;
-  position: absolute; left: 3px; top: 3px; z-index: 2;
-  border-radius: 50% !important;
-  overflow: hidden;
-  background: #131d25;
-}
-#audioViz { position: absolute; left: 0; top: 0; width: 110px; height: 110px; z-index: 1; pointer-events: none;}
-
-.displayname {
-  font-family: 'Orbitron', monospace;
-  font-size: 2rem;
-  color: var(--primary);
-  letter-spacing: 2px;
-  text-shadow: 0 0 8px #fff;
-  font-weight: 700;
-  margin: 0;
-  text-align: center;
-}
-.bio-desc {
-  margin-top: 0.2rem;
-  color: var(--primary);
-  font-size: 1.05rem;
-  text-align: center;
-  max-width: 340px;
-  line-height: 1.4;
-  font-weight: 400;
-  text-shadow: 0 2px 10px #00f7ff33;
-}
-
-.bio-links {
-  display: flex;
-  gap: 1.3rem;
-  margin-top: 1.2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.bio-link {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--glass-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  transition: all 0.3s;
-}
-.bio-link::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  z-index: 0;
-  transition: opacity 0.4s ease-out;
-}
-.bio-link img {
-  position: relative;
-  z-index: 1;
-  width: 63%;
-  transition: transform 0.3s ease;
-}
-.bio-link:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-5px);
-}
-.bio-link:hover::before {
-  opacity: 1;
-}
-.bio-link:hover img {
-  transform: scale(1.1);
-}
-.bio-link.discord::before { background: #5865F2; }
-.bio-link.discord:hover { box-shadow: 0 0 15px 4px #5865F2, var(--shadow); }
-
-.bio-link.instagram::before { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%); }
-.bio-link.instagram:hover { box-shadow: 0 0 15px 4px #d6249f, var(--shadow); }
-
-.bio-link.spotify::before { background: #1DB954; }
-.bio-link.spotify:hover { box-shadow: 0 0 15px 4px #1DB954, var(--shadow); }
-
-.bio-link.youtube::before { background: #FF0000; }
-.bio-link.youtube:hover { box-shadow: 0 0 15px 4px #FF0000, var(--shadow); }
-
-.bio-link.tiktok::before { background: #010101; }
-.bio-link.tiktok:hover { box-shadow: 0 0 10px 2px #ff0050, 0 0 10px 2px #00f2ea, var(--shadow); }
-
-.discord-status-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-.discord-status-status {
-  margin-top: .12em;
-  font-size: .96em;
-  font-weight: 500;
-  letter-spacing: .03em;
-  color: var(--primary);
-  text-align: center;
-}
-.discord-status-state {
-  margin-top: 0.18em;
-  font-size: 0.99em;
-  font-weight: 600;
-  padding: 3.5px 13px 3.5px 13px;
-  border-radius: 17px;
-  background: linear-gradient(90deg,#232d34 55%,#67e2f533 100%);
-  color: #fff;
-  display: inline-block;
-  min-width: 82px;
-  text-align: center;
-  box-shadow: 0 0 7px #67e2f544;
-  letter-spacing: 0.02em;
-}
-.discord-status-state.offline { background: linear-gradient(90deg,#35373d 60%,#45545a 100%); color: #c5c5c5; }
-.discord-status-state.online { background: linear-gradient(90deg,#0effac 20%,#4fffc1 100%); color: #222; }
-.discord-status-state.dnd { background: linear-gradient(90deg,#ff3b3f 30%,#fa8d8f 100%); color: #fff; }
-.discord-status-state.idle { background: linear-gradient(90deg,#ffae42 20%,#ffe2b2 100%); color: #653d00; }
-
-@media (max-width: 980px) {
-  .main-flex { flex-direction: column; gap: 0; align-items: center; margin-top: 2.2rem;}
-  .profile-card, .right-column, .music-card, .discord-status-card { min-width: unset; max-width: 97vw; width: 98vw;}
-}
-
-
-
-/* A hangerő gomb és a csúszka */
-.volume-container {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  z-index: 2;
-}
-
-.volume-btn {
-  background: linear-gradient(90deg, #fff 60%, #56e0f8 100%);
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 12px #56e0f855;
-  font-size: 1.18em;
-  color: #232d34;
-  outline: none;
-}
-
-.volume-slider-wrap {
-  display: flex;
-  position: absolute;
-  top: 40px;
-  right: -1px;
-  background: rgba(34, 45, 52, 0.95);
-  border-radius: 13px;
-  padding: 12px 6px;
-  box-shadow: 0 0 20px #56e0f877;
-  z-index: 6;
-}
-
-.volume-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  width: 26px;
-  height: 110px;
-  border-radius: 9px;
-  background: linear-gradient(180deg, #56e0f8 0%, #232d34 100%);
-  accent-color: #56e0f8;
-  outline: none;
-}
-
-
-
-/* Discord státusz kártya módosítások */
-.discord-status-card > .discord-status-left-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.discord-status-left {
-  flex-shrink: 0;
-}
-.discord-status-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid #67e2f5;
-  box-shadow: 0 0 12px #67e2f5bb, 0 2px 14px #67e2f577;
-  object-fit: cover;
-}
-.discord-status-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 120px;
-}
-.discord-status-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.discord-status-username {
-  font-family: 'Orbitron', monospace;
-  font-weight: 700;
-  font-size: 1.1em;
-  color: #67e2f5;
-  text-shadow: 0 1px 7px #0004;
-  white-space: nowrap;
-}
-.discord-status-state {
-  font-weight: 600;
-  font-size: 0.95em;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: linear-gradient(90deg, #0effac 20%, #4fffc1 100%);
-  color: #222;
-  box-shadow: 0 0 7px #67e2f544;
-  letter-spacing: 0.02em;
-  margin-top: 2px;
-  white-space: nowrap;
-}
-.discord-status-state.dnd {
-  background: linear-gradient(90deg,#ff3b3f 30%,#fa8d8f 100%);
-  color: #fff;
-}
-.discord-status-state.idle {
-  background: linear-gradient(90deg,#ffae42 20%,#ffe2b2 100%);
-  color: #653d00;
-}
-.discord-status-state.offline {
-  background: linear-gradient(90deg,#35373d 60%,#45545a 100%);
-  color: #c5c5c5;
-}
-.discord-status-custom-text {
-  font-size: 0.95em;
-  font-weight: 500;
-  color: #b7faff;
-  text-align: left;
-  font-style: italic;
-}
-/* Modal stílusok */
-#blockModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.85);
-  justify-content: center;
-  align-items: center;
-  z-index: 1001;
-}
-
-.modal-content {
-  background-color: rgba(0, 0, 0, 0.9);
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  max-width: 400px;
-  margin: auto;
-  color: #fff;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #555;
-}
-
-/* LÁTOGATÓSZÁMLÁLÓ STÍLUSOK */
-#view-counter {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  color: var(--primary);
-  border-radius: 50px;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  box-shadow: var(--shadow);  
-  border: 1px solid var(--music-accent);
-  z-index: 1000;
-  transition: transform 0.2s ease-out;
-}
-
-#view-counter:hover {
-  transform: scale(1.05);
-}
-
-/* === MÓDOSÍTOTT ÉS OPTIMALIZÁLT EGYEDI EGÉRMUTATÓ === */
-.custom-cursor {
-  position: fixed;
-  width: 25px;
-  height: 25px;
-  border: 2px solid var(--primary);
-  border-radius: 50%;
-  pointer-events: none;
-  left: 0; /* Módosítva a JS-hez */
-  top: 0;  /* Módosítva a JS-hez */
-  transform: translate(-100px, -100px); /* Kezdeti pozíció, amit a JS felülír */
-  transition: transform 0.1s ease-out, background-color 0.2s, width 0.2s, height 0.2s; /* Átmenet a transform-ra */
-  z-index: 9999;
-  box-shadow: 0 0 15px 5px rgba(183, 250, 255, 0.3), 0 0 5px 2px rgba(183, 250, 255, 0.5);
-  background: rgba(183, 250, 255, 0.1);
-}
-
-/* Új stílus a hover effektushoz, amit a JS kezel */
-.custom-cursor.hover-effect {
-  transform: scale(0.7); /* A JS a pozíciót ettől függetlenül kezeli */
-  background: rgba(183, 250, 255, 0.3);
-}
+@media (max-width: 768px) { body { overflow-y: auto; cursor: auto; } #custom-cursor { display: none; } #ui-container { position: relative; height: auto; padding: 20px 0; } .holo-card { width: 95%; margin-bottom: 50px; } }
