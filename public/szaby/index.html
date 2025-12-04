@@ -21,42 +21,47 @@
     <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
 
     <script>
-        // === A. AZONNALI ELLENŐRZÉS (SESSION BAN) ===
-        // Ha ebben a munkamenetben már volt büntetés, azonnal dobjuk
+        // === A. AZONNALI ELLENŐRZÉS ===
         try {
             if (sessionStorage.getItem('banned') === 'true') {
                 window.location.replace("https://www.google.com");
             }
         } catch(e) {}
 
-        // === B. BÜNTETŐ FÜGGVÉNY (STOPPP) ===
+        // === B. BÜNTETŐ FÜGGVÉNY ===
         function stoppp() {
             try { sessionStorage.setItem('banned', 'true'); } catch(e) {}
-            
-            // Tartalom törlése és fekete háttér
             document.documentElement.innerHTML = ""; 
             document.documentElement.style.backgroundColor = "black";
-            
-            // Azonnali csere a Google-re (így a vissza gomb nem működik)
             window.location.replace('https://www.google.com');
         }
 
-        // === C. BŐVÍTMÉNY VADÁSZ (EXTENSION HUNTER) ===
-        // Ez a funkció figyeli, hogy injektál-e bármilyen bővítmény kódot az oldalba
+        // === C. OKOS BŐVÍTMÉNY VADÁSZ (SMART EXTENSION HUNTER) ===
+        // Csak azokat a bővítményeket blokkolja, amik KÓDOT futtatnak (letöltők, scraperek)
         function detectExtensions() {
             const allElements = document.getElementsByTagName('*');
             for (let i = 0; i < allElements.length; i++) {
                 const el = allElements[i];
                 
-                // 1. Ellenőrizzük a forrásokat (src/href) - chrome-extension:// TILTOTT
-                if ((el.src && (el.src.includes('chrome-extension://') || el.src.includes('moz-extension://'))) ||
-                    (el.href && (el.href.includes('chrome-extension://') || el.href.includes('moz-extension://')))) {
-                    // console.log('Bővítmény elem észlelve!');
-                    stoppp(); 
-                    return;
+                // 1. CSAK A VESZÉLYES TÍPUSOKAT ELLENŐRIZZÜK
+                // Script = Programkód (Scraperek használják)
+                // Iframe = Beágyazott ablak (Downloaderek használják vezérlőpanelnek)
+                // Object/Embed = Beágyazott tartalom
+                // MEGJEGYZÉS: Az <img> (képek) és <link> (stílusok) nincsenek itt, 
+                // így a jelszókezelők és Dark Mode bővítmények NEM okoznak tiltást!
+                
+                if (el.tagName === 'SCRIPT' || el.tagName === 'IFRAME' || el.tagName === 'OBJECT' || el.tagName === 'EMBED') {
+                    
+                    // Ha ezeknek a forrása (src) bővítményre utal -> TILTÁS
+                    if (el.src && (el.src.includes('chrome-extension://') || el.src.includes('moz-extension://'))) {
+                        // console.log('Veszélyes Bővítmény elem:', el.tagName, el.src);
+                        stoppp();
+                        return;
+                    }
                 }
                 
-                // 2. Szigorú Script Ellenőrzés (Whitelist)
+                // 2. SZIGORÚ SCRIPT ELLENŐRZÉS (Whitelist)
+                // Ez megfogja azokat a scripteket is, amik nem bővítményből jönnek, hanem injektálva vannak
                 if (el.tagName === 'SCRIPT' && el.src) {
                     const allowedDomains = [
                         'szaby', // Saját domain részlet
@@ -72,67 +77,64 @@
                     ];
                     
                     let isSafe = false;
-                    // Ha a script forrása tartalmazza valamelyik engedélyezett domaint
                     for (let domain of allowedDomains) {
                         if (el.src.includes(domain)) { isSafe = true; break; }
                     }
-                    // A saját helyi fájlok engedélyezése
+                    // Helyi fájlok engedélyezése
                     const srcAttr = el.getAttribute('src');
                     if (srcAttr === '/szaby/script.js' || srcAttr === '/szaby/js-devtools-detector.js') isSafe = true;
 
-                    // Ha nem biztonságos -> BANNOLÁS (Opcionális: kapcsold be, ha nagyon szigorú akarsz lenni)
-                    /* if (!isSafe) {
-                        console.log('Idegen Script:', el.src);
-                        stoppp();
-                    } */
+                    // Ha a script se nem bővítmény, se nem a miénk -> TILTÁS
+                    // (Ez a sor opcionális, ha túl sok a téves riasztás, kommenteld ki a stoppp()-ot)
+                     if (!isSafe && !el.src.startsWith('chrome-extension') && !el.src.startsWith('moz-extension')) {
+                        // console.log('Gyanús Script:', el.src);
+                        // stoppp(); // Csak akkor kapcsold be, ha nagyon biztos vagy benne!
+                    }
                 }
             }
         }
         
-        // Futtatjuk a vadászt folyamatosan (1 mp)
-        setInterval(detectExtensions, 1000);
+        setInterval(detectExtensions, 1500); // 1.5 másodpercenként ellenőriz
 
-        // === D. OLDAL MEGJELENÍTÉSE (SAFE MODE) ===
+        // === D. OLDAL MEGJELENÍTÉSE ===
         document.addEventListener("DOMContentLoaded", function() {
             if (!sessionStorage.getItem('banned')) {
                 document.documentElement.style.display = 'block';
             }
         });
-        // Biztonsági megjelenítés timeout (ha a DOMContentLoaded késne)
         setTimeout(() => {
             if (!sessionStorage.getItem('banned')) document.documentElement.style.display = 'block';
         }, 100);
 
-        // === E. INPUT VÉDELEM (Billentyűk + Egér) ===
+        // === E. INPUT VÉDELEM (Ctrl+S Tiltása a mentés ellen) ===
         document.onkeydown = function(e) {
             if (
                 e.keyCode == 123 || // F12
+                (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) || // Ctrl+S (MENTÉS TILTÁSA!)
                 (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Ctrl+U
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))    // Ctrl+Shift+C
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
             ) {
-                stoppp(); 
+                e.preventDefault(); // Megakadályozza a mentést/megnyitást
+                stoppp(); // És büntet
                 return false;
             }
         };
         
-        // Jobb klikk tiltás
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // === F. DEVTOOLS DETEKTOR INDÍTÁSA ===
+        // === F. DEVTOOLS DETEKTOR ===
         if (typeof devtoolsDetector !== 'undefined') {
             devtoolsDetector.addListener(function(isOpen) {
                 if (isOpen) stoppp();
             });
             devtoolsDetector.launch();
         } else {
-            // Ha blokkolják a detektort (pl. AdBlock), akkor is büntetés
             stoppp();
         }
 
-        // === G. VISSZA GOMB FIGYELÉSE (PageShow) ===
-        // Ha cache-ből jön vissza az oldal, újratöltjük (ami kiváltja az ellenőrzést)
+        // === G. VISSZA GOMB VÉDELEM ===
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || sessionStorage.getItem('banned') === 'true') {
                 window.location.reload(); 
