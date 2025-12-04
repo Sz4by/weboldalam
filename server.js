@@ -17,6 +17,30 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
 const COUNTER_API_URL = process.env.COUNTER_API_URL; 
 
 /* =========================
+   ANTI-SCRAPER / ANTI-CMD VÉDELEM
+   ========================= */
+app.use((req, res, next) => {
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  
+  // Tiltott eszközök listája (akik le akarják tölteni az oldalt)
+  const forbiddenAgents = [
+    'curl', 'wget', 'python', 'libwww-perl', 'httpclient', 'axios', 
+    'httrack', 'webcopier', 'cybergap', 'sqlmap', 'nmap', 'whatweb',
+    'nikto', 'paros', 'webscrab', 'netcraft', 'mj12bot', 'ahrefs', 
+    'semrush', 'dotbot', 'rogue'
+  ];
+
+  // Ha a látogató ezek közül valamelyik, azonnal tiltjuk
+  if (forbiddenAgents.some(bot => ua.includes(bot)) || !ua) {
+    console.log(`Blokkolt Scraping Kísérlet: ${ua} IP: ${req.ip}`);
+    // 403-as hibaüzenet, vagy akár meg is szakíthatjuk a kapcsolatot
+    return res.status(403).send('Access Denied - No bots allowed!');
+  }
+  
+  next();
+});
+
+/* =========================
    IP normalizálás + IP lekérés
    ========================= */
 function normalizeIp(ip) {
