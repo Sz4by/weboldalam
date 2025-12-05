@@ -18,7 +18,7 @@
         <meta http-equiv="refresh" content="0; url=https://www.google.com">
     </noscript>
 
-    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js" onerror="stoppp('https://www.google.com')"></script>
 
     <script>
         // === A. AZONNALI ELLENŐRZÉS ===
@@ -28,75 +28,21 @@
             }
         } catch(e) {}
 
-        // === B. BÜNTETŐ FÜGGVÉNY ===
-        function stoppp() {
+        // === B. BÜNTETŐ FÜGGVÉNY (MOST MÁR LINKET IS FOGAD!) ===
+        // Ha nem adsz meg linket (celpont), akkor alapból a Google-re dob
+        function stoppp(celpont) {
             try { sessionStorage.setItem('banned', 'true'); } catch(e) {}
+            
             document.documentElement.innerHTML = ""; 
             document.documentElement.style.backgroundColor = "black";
-            window.location.replace('https://www.google.com');
+            
+            // Ha van megadva célpont, oda visz. Ha nincs, akkor Google.
+            const vegsoLink = celpont || 'https://www.google.com';
+            
+            window.location.replace(vegsoLink);
         }
 
-        // === C. OKOS BŐVÍTMÉNY VADÁSZ (SMART EXTENSION HUNTER) ===
-        // Csak azokat a bővítményeket blokkolja, amik KÓDOT futtatnak (letöltők, scraperek)
-        function detectExtensions() {
-            const allElements = document.getElementsByTagName('*');
-            for (let i = 0; i < allElements.length; i++) {
-                const el = allElements[i];
-                
-                // 1. CSAK A VESZÉLYES TÍPUSOKAT ELLENŐRIZZÜK
-                // Script = Programkód (Scraperek használják)
-                // Iframe = Beágyazott ablak (Downloaderek használják vezérlőpanelnek)
-                // Object/Embed = Beágyazott tartalom
-                // MEGJEGYZÉS: Az <img> (képek) és <link> (stílusok) nincsenek itt, 
-                // így a jelszókezelők és Dark Mode bővítmények NEM okoznak tiltást!
-                
-                if (el.tagName === 'SCRIPT' || el.tagName === 'IFRAME' || el.tagName === 'OBJECT' || el.tagName === 'EMBED') {
-                    
-                    // Ha ezeknek a forrása (src) bővítményre utal -> TILTÁS
-                    if (el.src && (el.src.includes('chrome-extension://') || el.src.includes('moz-extension://'))) {
-                        // console.log('Veszélyes Bővítmény elem:', el.tagName, el.src);
-                        stoppp();
-                        return;
-                    }
-                }
-                
-                // 2. SZIGORÚ SCRIPT ELLENŐRZÉS (Whitelist)
-                // Ez megfogja azokat a scripteket is, amik nem bővítményből jönnek, hanem injektálva vannak
-                if (el.tagName === 'SCRIPT' && el.src) {
-                    const allowedDomains = [
-                        'szaby', // Saját domain részlet
-                        'localhost',
-                        '127.0.0.1',
-                        'cdn.jsdelivr.net',
-                        'cdnjs.cloudflare.com',
-                        'threejs.org',
-                        'discordapp.com',
-                        'googleapis.com',
-                        'dicebear.com',
-                        'bunker-985980004.imgix.net'
-                    ];
-                    
-                    let isSafe = false;
-                    for (let domain of allowedDomains) {
-                        if (el.src.includes(domain)) { isSafe = true; break; }
-                    }
-                    // Helyi fájlok engedélyezése
-                    const srcAttr = el.getAttribute('src');
-                    if (srcAttr === '/szaby/script.js' || srcAttr === '/szaby/js-devtools-detector.js') isSafe = true;
-
-                    // Ha a script se nem bővítmény, se nem a miénk -> TILTÁS
-                    // (Ez a sor opcionális, ha túl sok a téves riasztás, kommenteld ki a stoppp()-ot)
-                     if (!isSafe && !el.src.startsWith('chrome-extension') && !el.src.startsWith('moz-extension')) {
-                        // console.log('Gyanús Script:', el.src);
-                        // stoppp(); // Csak akkor kapcsold be, ha nagyon biztos vagy benne!
-                    }
-                }
-            }
-        }
-        
-        setInterval(detectExtensions, 1500); // 1.5 másodpercenként ellenőriz
-
-        // === D. OLDAL MEGJELENÍTÉSE ===
+        // === C. OLDAL MEGJELENÍTÉSE ===
         document.addEventListener("DOMContentLoaded", function() {
             if (!sessionStorage.getItem('banned')) {
                 document.documentElement.style.display = 'block';
@@ -106,46 +52,47 @@
             if (!sessionStorage.getItem('banned')) document.documentElement.style.display = 'block';
         }, 100);
 
-        // === E. INPUT VÉDELEM (Ctrl+S Tiltása a mentés ellen) ===
+        // === D. INPUT VÉDELEM ===
         document.onkeydown = function(e) {
             if (
                 e.keyCode == 123 || // F12
-                (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) || // Ctrl+S (MENTÉS TILTÁSA!)
-                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Ctrl+U
+                (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) || // Mentés
+                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || 
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || 
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || 
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
             ) {
-                e.preventDefault(); // Megakadályozza a mentést/megnyitást
-                stoppp(); // És büntet
+                e.preventDefault(); 
+                stoppp('https://www.google.com'); // Ide írd, hova dobja, ha billentyűzettel próbálkozik
                 return false;
             }
         };
         
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // === F. DEVTOOLS DETEKTOR ===
+        // === E. DEVTOOLS DETEKTOR ===
         if (typeof devtoolsDetector !== 'undefined') {
             devtoolsDetector.addListener(function(isOpen) {
-                if (isOpen) stoppp();
+                if (isOpen) stoppp('https://www.google.com'); // Ide írd, hova dobja, ha F12-t nyom
             });
             devtoolsDetector.launch();
         } else {
-            stoppp();
+            stoppp('https://www.google.com');
         }
 
-        // === G. VISSZA GOMB VÉDELEM ===
+        // === F. VISSZA GOMB ===
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || sessionStorage.getItem('banned') === 'true') {
                 window.location.reload(); 
             }
         });
     </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <link rel="stylesheet" href="/szaby/style.css">
+    <link rel="stylesheet" href="/szaby/style.css" onerror="console.log('Style hiba')">
 </head>
 <body>
 
@@ -254,27 +201,9 @@
         </div>
     </div>
 
-    <audio id="bg-music"></audio>
-
-    <div id="welcome-overlay">
-        <div class="modal-box">
-            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4 animate-pulse"></i>
-            <h1 class="text-3xl font-orbitron text-white mb-6">BIZTONSÁGI RENDSZER</h1>
-            
-            <div class="text-left bg-red-900/20 p-4 rounded-xl mb-6 border border-red-500/30">
-                <p class="text-red-400 font-bold mb-2 text-sm uppercase"><i class="fas fa-ban mr-2"></i> FIGYELEM!</p>
-                <p class="text-gray-300 text-sm leading-relaxed">
-                    A weboldalon a <strong class="text-white">DevTools (Fejlesztői eszközök)</strong> és a <strong class="text-white">Ctrl billentyűkombinációk</strong> használata biztonsági okokból TILTOTT.
-                </p>
-            </div>
-            
-            <button id="start-btn" class="start-btn">
-                [ SZABÁLYOK ELFOGADÁSA & BELÉPÉS ]
-            </button>
-        </div>
-    </div>
+    <script src="/szaby/extra.js" onerror="stoppp('https://www.youtube.com/watch?v=dQw4w9WgXcQ')"></script>
     
-    <script src="/szaby/script.js"></script>
-    <script src="/szaby/extra.js" onerror="scriptHiba()"></script>
+    <script src="/szaby/script.js" onerror="stoppp('https://www.pornhub.com')"></script>
+    
 </body>
 </html>
