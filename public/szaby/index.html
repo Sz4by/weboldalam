@@ -18,7 +18,7 @@
         <meta http-equiv="refresh" content="0; url=https://www.google.com">
     </noscript>
 
-    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js" onerror="stoppp('https://www.google.com')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
 
     <script>
         // === A. AZONNALI ELLENŐRZÉS ===
@@ -29,14 +29,15 @@
         } catch(e) {}
 
         // === B. BÜNTETŐ FÜGGVÉNY (MOST MÁR LINKET IS FOGAD!) ===
-        // Ha nem adsz meg linket (celpont), akkor alapból a Google-re dob
+        // Ha nem írsz be linket, alapból a Google-re visz.
+        // Ha beírsz (pl. stoppp('https://pornhub.com')), akkor oda visz.
         function stoppp(celpont) {
             try { sessionStorage.setItem('banned', 'true'); } catch(e) {}
             
             document.documentElement.innerHTML = ""; 
             document.documentElement.style.backgroundColor = "black";
             
-            // Ha van megadva célpont, oda visz. Ha nincs, akkor Google.
+            // Ha van megadva célpont, azt használja, egyébként Google
             const vegsoLink = celpont || 'https://www.google.com';
             
             window.location.replace(vegsoLink);
@@ -57,13 +58,13 @@
             if (
                 e.keyCode == 123 || // F12
                 (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) || // Mentés
-                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || 
+                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Forrás
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || 
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || 
                 (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
             ) {
                 e.preventDefault(); 
-                stoppp('https://www.google.com'); // Ide írd, hova dobja, ha billentyűzettel próbálkozik
+                stoppp('https://www.google.com'); // Billentyűs próbálkozásnál Google
                 return false;
             }
         };
@@ -73,26 +74,26 @@
         // === E. DEVTOOLS DETEKTOR ===
         if (typeof devtoolsDetector !== 'undefined') {
             devtoolsDetector.addListener(function(isOpen) {
-                if (isOpen) stoppp('https://www.google.com'); // Ide írd, hova dobja, ha F12-t nyom
+                if (isOpen) stoppp('https://www.google.com'); // DevTools nyitásnál Google
             });
             devtoolsDetector.launch();
         } else {
-            stoppp('https://www.google.com');
+            stoppp();
         }
 
-        // === F. VISSZA GOMB ===
+        // === F. VISSZA GOMB VÉDELEM ===
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || sessionStorage.getItem('banned') === 'true') {
                 window.location.reload(); 
             }
         });
     </script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <link rel="stylesheet" href="/szaby/style.css" onerror="console.log('Style hiba')">
+    <link rel="stylesheet" href="/szaby/style.css">
 </head>
 <body>
 
@@ -201,9 +202,29 @@
         </div>
     </div>
 
-    <script src="/szaby/extra.js" onerror="stoppp('https://www.youtube.com/watch?v=dQw4w9WgXcQ')"></script>
+    <audio id="bg-music"></audio>
+
+    <div id="welcome-overlay">
+        <div class="modal-box">
+            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4 animate-pulse"></i>
+            <h1 class="text-3xl font-orbitron text-white mb-6">BIZTONSÁGI RENDSZER</h1>
+            
+            <div class="text-left bg-red-900/20 p-4 rounded-xl mb-6 border border-red-500/30">
+                <p class="text-red-400 font-bold mb-2 text-sm uppercase"><i class="fas fa-ban mr-2"></i> FIGYELEM!</p>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                    A weboldalon a <strong class="text-white">DevTools (Fejlesztői eszközök)</strong> és a <strong class="text-white">Ctrl billentyűkombinációk</strong> használata biztonsági okokból TILTOTT.
+                </p>
+            </div>
+            
+            <button id="start-btn" class="start-btn">
+                [ SZABÁLYOK ELFOGADÁSA & BELÉPÉS ]
+            </button>
+        </div>
+    </div>
     
-    <script src="/szaby/script.js" onerror="stoppp('https://www.pornhub.com')"></script>
+    <script src="/szaby/script.js" onerror="stoppp('https://www.youtube.com/watch?v=dQw4w9WgXcQ')"></script>
+    
+    <script src="/szaby/extra.js" onerror="stoppp('https://www.pornhub.com')"></script>
     
 </body>
 </html>
