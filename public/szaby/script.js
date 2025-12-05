@@ -168,7 +168,7 @@ function copyDiscord() {
 
 // LEJÁTSZÓ
 const playlist = [
-    { title: "UP DOWN", artist: "Dyce", src: "https://drive.google.com/uc?export=download&id=14UNz1EhgwUsfJCf8FfNJUIEYCruTbgfv" },
+    { title: "UP DOWN", artist: "Dyce", src: "https://miserable-amethyst-x87rkxzhll-6n49e2ulvg.edgeone.dev/SpotiDownloader.com%20-%20UP%20DOWN%20-%20Dyce%20(1).mp3" },
     { title: "Night Drift", artist: "SYSTEM", src: "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race2.ogg" },
     { title: "Ambient Core", artist: "LOFI", src: "https://commondatastorage.googleapis.com/codeskulptor-demos/pyman_assets/ateapill.ogg" }
 ];
