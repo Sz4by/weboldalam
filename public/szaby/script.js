@@ -168,7 +168,7 @@ function copyDiscord() {
 
 // LEJÁTSZÓ
 const playlist = [
-    { title: "Race to Space", artist: "CYBER", src: "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race1.ogg" },
+    { title: "UP DOWN", artist: "Dyce", src: "https://drive.google.com/uc?export=download&id=14UNz1EhgwUsfJCf8FfNJUIEYCruTbgfv" },
     { title: "Night Drift", artist: "SYSTEM", src: "https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race2.ogg" },
     { title: "Ambient Core", artist: "LOFI", src: "https://commondatastorage.googleapis.com/codeskulptor-demos/pyman_assets/ateapill.ogg" }
 ];
