@@ -612,7 +612,7 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
 /* ====================================================================
    JAVÍTOTT REPORT RENDSZER (ÚJ WEBHOOK + AUTO BAN + ÜZENET)
    ==================================================================== */
-app.post('/report', express.json(), async (req, res) => {
+app.post('/fasz', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   let { reason, page } = req.body || {};
 
