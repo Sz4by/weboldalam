@@ -10,35 +10,31 @@ app.set('trust proxy', true); // ha proxy/CDN mögött futsz
 
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
-const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK; // Ez marad a belső logoknak
-const REPORT_WEBHOOK = process.env.REPORT_WEBHOOK; // Ez az ÚJ a támadásoknak (ha beállítod)
+const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK;
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
+// --- ÚJ VÁLTOZÓ: A titkos számláló link ---
 const COUNTER_API_URL = process.env.COUNTER_API_URL; 
 
-/* ==========================================================
-   1. VÉDELEM: ANTI-SCRAPER / ANTI-CMD
-   (Azonnal blokkolja a Python scripteket és letöltőket)
-   ========================================================== */
+/* =========================
+   ANTI-SCRAPER / ANTI-CMD VÉDELEM
+   ========================= */
 app.use((req, res, next) => {
   const ua = (req.headers['user-agent'] || '').toLowerCase();
   
-  // Tiltott eszközök listája
+  // Tiltott eszközök listája (akik le akarják tölteni az oldalt)
   const forbiddenAgents = [
     'curl', 'wget', 'python', 'libwww-perl', 'httpclient', 'axios', 
     'httrack', 'webcopier', 'cybergap', 'sqlmap', 'nmap', 'whatweb',
     'nikto', 'paros', 'webscrab', 'netcraft', 'mj12bot', 'ahrefs', 
-    'semrush', 'dotbot', 'rogue', 'go-http-client'
+    'semrush', 'dotbot', 'rogue'
   ];
 
   // Ha a látogató ezek közül valamelyik, azonnal tiltjuk
   if (forbiddenAgents.some(bot => ua.includes(bot)) || !ua) {
-    console.log(`🛑 Blokkolt Scraping Kísérlet: ${ua} IP: ${req.ip}`);
-    return res.status(403).json({
-        error: "ACCESS_DENIED",
-        message: "A te eszközöd/botod ki van tiltva erről a szerverről.",
-        your_ip: req.ip
-    });
+    console.log(`Blokkolt Scraping Kísérlet: ${ua} IP: ${req.ip}`);
+    // 403-as hibaüzenet, vagy akár meg is szakíthatjuk a kapcsolatot
+    return res.status(403).send('Access Denied - No bots allowed!');
   }
   
   next();
@@ -60,6 +56,7 @@ function getClientIp(req) {
     (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : '') ||  // X-Forwarded-For
     (req.socket.remoteAddress || req.connection.remoteAddress || '');  // fallback, ha semmi más nincs
 
+  // Naplózzuk az IP-t, hogy lássuk, mit kaptunk
   console.log("Received IP: ", ip);
 
   return normalizeIp(ip);
@@ -395,7 +392,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 /* =========================
-//   TITKOS SZÁMLÁLÓ PROXY
+//   TITKOS SZÁMLÁLÓ PROXY (ÚJ RÉSZ)
 // ========================= */
 app.get('/api/counter', async (req, res) => {
   try {
@@ -609,69 +606,12 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
 });
 
 
-/* ====================================================================
-   JAVÍTOTT REPORT RENDSZER (ÚJ WEBHOOK + AUTO BAN + ÜZENET)
-   ==================================================================== */
-app.post('/fasz', express.json(), async (req, res) => {
+/* =========================
+// Rossz kombináció figyelő
+// ========================= */
+app.post('/report', express.json(), async (req, res) => {
   const ip = getClientIp(req);
-  let { reason, page } = req.body || {};
-
-  // Ha nincs beállítva a REPORT webhook, biztonságból használja az ALERT-et
-  // De a cél, hogy legyen külön REPORT_WEBHOOK az .env-ben!
-  const ATTACK_LOG_WEBHOOK = REPORT_WEBHOOK || ALERT_WEBHOOK;
-
-  // 1. ORIGIN CHECK & AUTO-BAN
-  // Ellenőrizzük, honnan jött a kérés.
-  const origin = req.get('origin');
-  const referer = req.get('referer');
-  
-  // Ha nem a szaby.is-a.dev-ről jön (és nem üres), blokkoljuk és BANNOLJUK
-  // Ez védi ki a Postman/Python támadásokat.
-  if ((origin && !origin.includes('szaby.is-a.dev')) || 
-      (referer && !referer.includes('szaby.is-a.dev'))) {
-      
-      console.log(`🚫 Idegen API hívás blokkolva és IP bannolva: ${ip}, Source: ${origin || referer || 'Unknown'}`);
-      
-      // AZONNALI BAN 24 ÓRÁRA
-      banIp(ip);
-
-      // Discord értesítés a REPORT (szemetes) webhookra
-      axios.post(ATTACK_LOG_WEBHOOK, {
-        username: "API Védelmi Rendszer",
-        embeds: [{
-          title: '🚨 KÜLSŐ TÁMADÁS BLOKKOLVA!',
-          description: `**Valaki megpróbálta távolról használni a webhookodat!**\n\n**Támadó IP:** ${ip}\n**Honnan:** ${origin || referer || 'Script/Postman'}\n**Akció:** 24 órás ban kiosztva.`,
-          color: 0xff0000 // Piros
-        }]
-      }).catch(() => {});
-
-      // VÁLASZÜZENET A TÁMADÓNAK
-      return res.status(403).json({
-          error: "ACCESS_DENIED",
-          message: "Támadási kísérlet észlelve! Az IP címed ( " + ip + " ) le lett tiltva.",
-          warning: "A hatóságokat értesítettük."
-      });
-  }
-
-  // --- HA IDÁIG ELJUTOTT, AKKOR VALÓDI FELHASZNÁLÓ A TE OLDALADRÓL ---
-
-  // 2. WHITELIST - Csak az általad írt hibaüzeneteket fogadjuk el!
-  const validReasons = [
-      'Ctrl+U kombináció blokkolva (forráskód megtekintés)',
-      'Ctrl+Shift+I kombináció blokkolva (fejlesztői eszközök)',
-      'Ctrl+Shift+J kombináció blokkolva (fejlesztői konzol)',
-      'F12 gomb blokkolva (fejlesztői eszközök)',
-      'Ctrl+S kombináció blokkolva (oldal mentése)',
-      'Ctrl+P kombináció blokkolva (oldal nyomtatása)',
-      'Jobb kattintás blokkolva (kontextus menü)'
-  ];
-
-  if (!validReasons.includes(reason)) {
-      reason = `⚠️ MANIPULÁLT ÜZENET (Spam kísérlet)`;
-  }
-
-  // 3. PING SZŰRŐ
-  if (reason) reason = reason.replace(/@/g, '[at]');
+  const { reason, page } = req.body || {};
 
   // SAJÁT IP: ne logolja rossz kombinációnak és ne tiltsa
   if (MY_IPS.includes(ip)) {
@@ -681,11 +621,11 @@ app.post('/fasz', express.json(), async (req, res) => {
   const geoData = await getGeo(ip);
   const count = recordBadAttempt(ip);
 
-  // EZT (BELSŐ JELENTÉS) AZ ALERT WEBHOOKRA KÜLDJÜK, HOGY LÁSD A FELHASZNÁLÓKAT
+  // Discord log
   axios.post(ALERT_WEBHOOK, {
     username: "Kombináció figyelő",
     embeds: [{
-      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok próbálkozás!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
+      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA – túl sok rossz kombináció!' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
       description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
       color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
     }]
@@ -702,6 +642,11 @@ app.post('/fasz', express.json(), async (req, res) => {
   res.json({ ok: true });
 });
     
+/* =========================
+// Statikus fájlok (újra, hogy biztos minden el legyen érve)
+// ========================= */
+app.use(express.static(path.join(__dirname, 'public')));
+
 /* =========================
 // 404
 // ========================= */
