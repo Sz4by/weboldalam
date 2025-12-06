@@ -609,7 +609,7 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
 /* =========================
 // Rossz kombináció figyelő
 // ========================= */
-app.post('/report', express.json(), async (req, res) => {
+app.post('/faszikamika', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   const { reason, page } = req.body || {};
 
