@@ -10,8 +10,8 @@ app.set('trust proxy', true); // ha proxy/CDN mögött futsz
 
 const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
-const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK; // Belső logok (F12, Admin)
-const REPORT_WEBHOOK = process.env.REPORT_WEBHOOK; // Támadások logja (ha beállítod)
+const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK; // Belső logok (F12, Admin, Valid Report)
+const REPORT_WEBHOOK = process.env.REPORT_WEBHOOK; // Támadások és SPAM logja (Piros)
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
 const COUNTER_API_URL = process.env.COUNTER_API_URL; 
@@ -20,21 +20,75 @@ const COUNTER_API_URL = process.env.COUNTER_API_URL;
 const EGYEDI_UZENET = ">>> **SZABY RENDSZER AKTÍV!** Új látogató a rendszeren. Minden védelem éles.";
 
 /* ==========================================================
-   PROXY LISTA BETÖLTÉSE (proxies.txt)
+   OKOS PROXY KEZELŐ RENDSZER (SMART PROXY MANAGER)
+   Folyamatosan fut a háttérben és szűri a rossz proxykat.
    ========================================================== */
-let proxyList = [];
-try {
-    if (fs.existsSync('proxies.txt')) {
-        const proxyData = fs.readFileSync('proxies.txt', 'utf8');
-        // Sorokra bontás, üres sorok törlése
-        proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0 && line.includes(':'));
-        console.log(`✅ ${proxyList.length} db Proxy sikeresen betöltve a proxies.txt fájlból.`);
-    } else {
-        console.log("⚠️ Nincs proxies.txt fájl. A rendszer direkt módban (saját IP-ről) fog futni.");
-    }
-} catch (err) {
-    console.log("⚠️ Hiba a proxies.txt olvasásakor:", err.message);
+let allProxies = [];    // Az összes proxy a fájlból
+let activeProxies = []; // Csak azok, amik JÓK és NEM LIMITESEK
+
+// 1. Proxyk betöltése fájlból
+function loadProxies() {
+    try {
+        if (fs.existsSync('proxies.txt')) {
+            const data = fs.readFileSync('proxies.txt', 'utf8');
+            // Sorokra bontás, üres sorok törlése
+            allProxies = data.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0 && line.includes(':'));
+            console.log(`📂 Proxy lista betöltve: ${allProxies.length} db.`);
+        } else {
+            console.log("⚠️ Nincs proxies.txt fájl! A rendszer direkt módban fog futni.");
+        }
+    } catch (err) { console.log("Hiba a proxy olvasáskor:", err.message); }
 }
+
+// 2. Egy proxy tesztelése (Háttérben fut)
+async function testProxy(proxyStr) {
+    const parts = proxyStr.split(':');
+    const config = { protocol: 'http', host: parts[0], port: parseInt(parts[1]) };
+    
+    try {
+        // Teszt hívás egy semleges címre (Google DNS Geo API)
+        const res = await axios.get('https://ipwhois.app/json/8.8.8.8', { 
+            proxy: config, 
+            timeout: 5000 // 5mp türelem a teszthez
+        });
+
+        // Ha a válasz sikeres, ÉS a "success" mező nem false (nincs limit hiba)
+        if (res.data && res.data.success !== false) {
+            return true; // TÖKÉLETES PROXY
+        } else {
+            return false; // Limitált vagy hibás válasz
+        }
+    } catch (e) {
+        return false; // Halott proxy (timeout vagy connection error)
+    }
+}
+
+// 3. Háttér ellenőrzés (Időzítve)
+async function refreshActiveProxies() {
+    if (allProxies.length === 0) return;
+    
+    console.log("🔄 Háttér: Proxyk ellenőrzése és szűrése indul...");
+    let working = [];
+    
+    // Végigpróbáljuk az összeset
+    for (const proxy of allProxies) {
+        const isGood = await testProxy(proxy);
+        if (isGood) working.push(proxy);
+    }
+    
+    activeProxies = working; // Frissítjük az aktív listát
+    console.log(`✅ Proxy lista frissítve! Használható: ${activeProxies.length} / ${allProxies.length}`);
+}
+
+// Indításkor betöltés és első ellenőrzés
+loadProxies();
+refreshActiveProxies();
+
+// Időzítő: 20 percenként (20 * 60 * 1000 ms) újraellenőrzi az egész listát a háttérben
+setInterval(refreshActiveProxies, 20 * 60 * 1000);
+
 
 /* ==========================================================
    1. VÉDELEM: ANTI-SCRAPER / ANTI-CMD
@@ -51,7 +105,8 @@ app.use((req, res, next) => {
   ];
 
   if (forbiddenAgents.some(bot => ua.includes(bot)) || !ua) {
-    console.log(`🛑 Blokkolt Scraping Kísérlet: ${ua} IP: ${req.ip}`);
+    console.log(`🛑 Blokkolt Bot: ${ua} | IP: ${req.ip}`);
+    
     return res.status(403).json({
         error: "ACCESS_DENIED",
         message: "A te eszközöd/botod ki van tiltva erről a szerverről.",
@@ -155,7 +210,7 @@ if(initBannedData && initBannedData.ips) {
 }
 
 /* =========================
-   RÉSZLETES GEO LOG LISTÁK (3 KÜLÖN) - AZ EREDETI HOSSZÚ LISTÁK
+   RÉSZLETES GEO LOG LISTÁK (3 KÜLÖN) - AZ EREDETI HOSSZÚ VERZIÓ
    ========================= */
 // 1) TELJES lista – általános HTML látogatókhoz
 function formatGeoDataTeljes(geo) {
@@ -262,71 +317,65 @@ function formatGeoDataReport(geo, pageUrl) {
 
 
 /* ====================================================================
-   OKOS GEO LEKÉRDEZÉS (PROXY FORGATÁS)
+   OKOS GEO LEKÉRDEZÉS (CSAK AKTÍV PROXYKKAL + KIVÉTEL)
    Ez a rész próbálkozik 3x különböző proxykkal, ha hiba van.
    ==================================================================== */
 async function getGeo(ip) {
-  const maxRetries = 5; // Hányszor próbálkozzon proxyval
+  const maxRetries = 5; 
   
-  // Random proxy választó
+  // Random proxy választó az AKTÍV listából
   const getRandomProxyConfig = () => {
-      if (proxyList.length === 0) return null;
-      const proxyStr = proxyList[Math.floor(Math.random() * proxyList.length)];
+      if (activeProxies.length === 0) return null;
+      // Véletlenszerű index választása
+      const index = Math.floor(Math.random() * activeProxies.length);
+      const proxyStr = activeProxies[index];
       const parts = proxyStr.split(':');
-      if (parts.length >= 2) {
-          return {
-              protocol: 'http',
-              host: parts[0],
-              port: parseInt(parts[1])
-          };
-      }
-      return null;
+      return { 
+          config: { protocol: 'http', host: parts[0], port: parseInt(parts[1]) },
+          originalStr: proxyStr
+      };
   };
 
-  // 1. Próbálkozás proxykkal
   for (let i = 0; i < maxRetries; i++) {
-      const proxyConfig = getRandomProxyConfig();
-      
-      // Ha nincs proxy fájl, vagy üres, kilépünk és direktben kérjük le
-      if (!proxyConfig) break; 
+      const proxyObj = getRandomProxyConfig();
+      if (!proxyObj) break; // Ha nincs aktív proxy, kilépünk
 
       try {
-          // console.log(`🔄 Geo lekérés proxyval (${i+1}. próba): ${proxyConfig.host}`);
+          // Timeouttal védett hívás
           const geo = await axios.get(`https://ipwhois.app/json/${ip}`, {
-              proxy: proxyConfig,
-              timeout: 4000 // 4 másodpercet vár max a proxyra
+              proxy: proxyObj.config,
+              timeout: 4000
           });
 
-          // Ha sikeres ÉS nincs benne hibaüzenet (success: false)
+          // Ha SIKERES és NINCS LIMIT hiba -> Visszaadjuk és KÉSZ.
           if (geo.data && geo.data.success !== false) {
               return geo.data;
           } else {
-              // Ha itt tartunk, limit hiba van -> jön a kövi proxy
+              // HIBA: Limit hiba -> AZONNAL KIVESSZÜK az aktív listából
+              console.log(`⚠️ Proxy limitálva: ${proxyObj.originalStr} -> Eltávolítva.`);
+              activeProxies = activeProxies.filter(p => p !== proxyObj.originalStr);
           }
       } catch (err) {
-          // Ha a proxy halott (timeout), csendben nyeljük le és jön a kövi
+          // HIBA: Halott proxy -> AZONNAL KIVESSZÜK
+          // console.log(`⚠️ Proxy halott: ${proxyObj.originalStr} -> Eltávolítva.`);
+          activeProxies = activeProxies.filter(p => p !== proxyObj.originalStr);
       }
   }
 
-  // 2. Ha minden proxy elbukott, megpróbáljuk DIREKTBEN (saját IP-ről)
+  // Fallback: Ha minden proxy elfogyott, direkt lekérés (saját IP)
   try {
-      console.log("⚠️ Minden proxy sikertelen, direkt lekérés...");
+      console.log("⚠️ Nincs több aktív proxy, direkt lekérés...");
       const geo = await axios.get(`https://ipwhois.app/json/${ip}`, { timeout: 5000 });
       if (geo.data.success === false) return {};
       return geo.data;
-  } catch (err) {
-      console.log("❌ Végleges Geo hiba:", err.message);
-      return {};
-  }
+  } catch (err) { return {}; }
 }
 
 async function isVpnProxy(ip) {
   try {
     const url = `https://proxycheck.io/v2/${ip}?key=${PROXYCHECK_API_KEY}&vpn=1&asn=1&node=1`;
     const res = await axios.get(url, { timeout: 5000 });
-    if (res.data && res.data[ip]) {
-      return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
-    }
+    if (res.data && res.data[ip]) return res.data[ip].proxy === "yes" || res.data[ip].type === "VPN";
     return false;
   } catch { return false; }
 }
@@ -353,88 +402,44 @@ app.get('/banned-permanent.html', (req, res) => {
 });
 
 /* =========================
-   Globális IP ban middleware
-   ========================= */
-app.use((req, res, next) => {
-  const ip = getClientIp(req);  
-
-  if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
-    const bannedData = readBannedIPs();  
-
-    // 24 órás
-    if (isIpBanned(ip)) {
-      const page = path.join(__dirname, 'public', 'banned-ip.html');
-      if (fs.existsSync(page)) return res.status(403).sendFile(page);
-    }
-
-    // Végleges
-    if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) {
-      const permanentBannedPage = path.join(__dirname, 'public', 'banned-permanent.html');
-      if (fs.existsSync(permanentBannedPage)) return res.status(403).sendFile(permanentBannedPage);
-    }
-  }
-  next();  
-});
-
-/* =========================
-   HTML logoló + VPN szűrő
+   Middleware: BAN + VPN + LOG
    ========================= */
 app.use(async (req, res, next) => {
-  const publicDir = path.join(__dirname, 'public');
-  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, '');
-
-  let servesHtml = false;
-  if (req.method === 'GET' || req.method === 'HEAD') {
-    if (req.path === '/') servesHtml = true;
-    else if (cleanPath.toLowerCase().endsWith('.html')) {
-      servesHtml = fs.existsSync(path.join(publicDir, cleanPath));
-    } else if (!path.extname(cleanPath)) {
-      servesHtml = fs.existsSync(path.join(publicDir, cleanPath, 'index.html'));
-    }
-  }
-  if (!servesHtml) return next();
-
   const ip = getClientIp(req);
-  const geoData = await getGeo(ip);
-
-  // Tiltott IP-k szűrése logolás előtt
   if (!MY_IPS.includes(ip) && !WHITELISTED_IPS.includes(ip)) {
-    const bannedData = readBannedIPs(); 
-    if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) {
-      return res.status(403).sendFile(path.join(__dirname, 'public', 'banned-permanent.html'));
-    }
+    const bannedData = readBannedIPs();
+    if (isIpBanned(ip)) { const p = path.join(__dirname, 'public', 'banned-ip.html'); if (fs.existsSync(p)) return res.status(403).sendFile(p); }
+    if (permanentBannedIPs.includes(ip) || bannedData.ips.includes(ip)) { const p = path.join(__dirname, 'public', 'banned-permanent.html'); if (fs.existsSync(p)) return res.status(403).sendFile(p); }
   }
 
-  // VPN Check
-  const vpnCheck = await isVpnProxy(ip);
-  if (vpnCheck) {
-    if (!WHITELISTED_IPS.includes(ip)) {
-      axios.post(ALERT_WEBHOOK, {
-        username: "VPN Figyelő",
-        embeds: [{
-          title: 'VPN/proxy vagy TOR!',
-          description: `**Oldal:** ${fullUrl}\n` + formatGeoDataVpn(geoData),
-          color: 0xff0000
-        }]
-      }).catch(() => {});
-      
-      const bannedVpnPage = path.join(__dirname, 'public', 'banned-vpn.html');
-      if (fs.existsSync(bannedVpnPage)) return res.status(403).sendFile(bannedVpnPage);
-      return res.status(403).send('VPN/proxy vagy TOR használata tiltott! 🚫');
-    }
-  } else {
-    // Normál log
-    if (!MY_IPS.includes(ip)) {
-      axios.post(MAIN_WEBHOOK, {
-        username: "Látogató Naplózó",
-        embeds: [{
-          title: 'Új látogató (HTML)',
-          description: EGYEDI_UZENET + `\n\n**Oldal:** ${fullUrl}\n` + formatGeoDataTeljes(geoData),
-          color: 0x800080
-        }]
-      }).catch(() => {});
-    }
+  const publicDir = path.join(__dirname, 'public');
+  const cleanPath = decodeURIComponent(req.path).replace(/^\/+/, '');
+  let servesHtml = false;
+  if (req.method === 'GET') {
+    if (req.path === '/') servesHtml = true;
+    else if (cleanPath.endsWith('.html')) servesHtml = fs.existsSync(path.join(publicDir, cleanPath));
+    else if (!path.extname(cleanPath)) servesHtml = fs.existsSync(path.join(publicDir, cleanPath, 'index.html'));
+  }
+  
+  if (servesHtml) {
+      const geoData = await getGeo(ip); 
+      const vpnCheck = await isVpnProxy(ip);
+
+      if (vpnCheck && !WHITELISTED_IPS.includes(ip)) {
+          axios.post(ALERT_WEBHOOK, {
+              username: "VPN Figyelő",
+              embeds: [{ title: 'VPN/Proxy Tiltva!', description: formatGeoDataVpn(geoData), color: 0xff0000 }]
+          }).catch(()=>{});
+          const p = path.join(__dirname, 'public', 'banned-vpn.html');
+          if (fs.existsSync(p)) return res.status(403).sendFile(p);
+          return res.status(403).send('VPN Tiltva');
+      } else if (!MY_IPS.includes(ip)) {
+          const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+          axios.post(MAIN_WEBHOOK, {
+              username: "Látogató Naplózó",
+              embeds: [{ title: 'Új látogató (HTML)', description: EGYEDI_UZENET + `\n\n**URL:** ${fullUrl}\n` + formatGeoDataTeljes(geoData), color: 0x800080 }]
+          }).catch(()=>{});
+      }
   }
   next();
 });
@@ -471,6 +476,7 @@ app.get('/admin', (req, res) => {
       <button type="submit" data-action="permanent-unban">IP VÉGLEGES FELOLDÁS</button> </div>
   </form>
   <div class="msg" id="msg"></div>
+  
   <script>
     const form = document.getElementById('adminForm');
     const msg = document.getElementById('msg');
@@ -596,114 +602,79 @@ app.post('/admin/permanent-unban/form', express.urlencoded({ extended: true }), 
 
 
 /* ====================================================================
-   JAVÍTOTT REPORT RENDSZER (CSENDES FAIL + AUTO BAN + PROXY GEO)
+   JAVÍTOTT REPORT RENDSZER (SZÉTVÁLASZTOTT LOGOK)
    ==================================================================== */
 app.post('/api/biztonsagi-naplo-v1', express.json(), async (req, res) => {
   const ip = getClientIp(req);
   let { reason, page } = req.body || {};
 
+  // Ha nincs REPORT_WEBHOOK az .env-ben, használjuk az ALERT-et (biztonsági tartalék)
   const ATTACK_LOG_WEBHOOK = REPORT_WEBHOOK || ALERT_WEBHOOK;
-  const INTERNAL_LOG_WEBHOOK = ALERT_WEBHOOK;
 
   // 1. ORIGIN CHECK & AUTO-BAN
   const origin = req.get('origin');
   const referer = req.get('referer');
-  
-  if ((origin && !origin.includes('szaby.is-a.dev')) || 
-      (referer && !referer.includes('szaby.is-a.dev'))) {
-      
-      console.log(`🚫 Idegen API hívás blokkolva és IP bannolva: ${ip}, Source: ${origin || referer || 'Unknown'}`);
-      
-      // AZONNALI BAN 24 ÓRÁRA
-      banIp(ip);
+  if ((origin && !origin.includes('szaby.is-a.dev')) || (referer && !referer.includes('szaby.is-a.dev'))) {
+      console.log(`🚫 Idegen kérés BANNOLVA: ${ip}`);
+      banIp(ip); 
+      axios.post(ATTACK_LOG_WEBHOOK, { username: "Védelmi Rendszer", embeds: [{ title: '🚨 KÜLSŐ TÁMADÁS BLOKKOLVA!', description: `**IP:** ${ip}\n**Forrás:** ${origin}\n**Akció:** BAN 24h`, color: 0xff0000 }] }).catch(() => {});
+      return res.status(403).json({ error: "BANNED", message: "Tiltva." });
+  }
 
-      // Discord értesítés a REPORT (szemetes) webhookra
-      axios.post(ATTACK_LOG_WEBHOOK, {
-        username: "API Védelmi Rendszer",
+  // 2. WHITELIST SZŰRÉS & SZÉTVÁLASZTÁS
+  const validReasons = ['Ctrl+U kombináció blokkolva (forráskód megtekintés)', 'Ctrl+Shift+I kombináció blokkolva (fejlesztői eszközök)', 'Ctrl+Shift+J kombináció blokkolva (fejlesztői konzol)', 'F12 gomb blokkolva (fejlesztői eszközök)', 'Ctrl+S kombináció blokkolva (oldal mentése)', 'Ctrl+P kombináció blokkolva (oldal nyomtatása)', 'Jobb kattintás blokkolva (kontextus menü)'];
+
+  if (MY_IPS.includes(ip)) return res.json({ ok: true });
+
+  const geoData = await getGeo(ip); 
+  const count = recordBadAttempt(ip);
+
+  // ELÁGAZÁS: VALID VAGY MANIPULÁLT?
+  if (validReasons.includes(reason)) {
+      // --- 1. ESET: VALID HIBA (F12, stb.) -> ALERT WEBHOOK (Narancs) ---
+      axios.post(ALERT_WEBHOOK, {
+        username: "Kombináció figyelő",
         embeds: [{
-          title: '🚨 KÜLSŐ TÁMADÁS BLOKKOLVA!',
-          description: `**Valaki megpróbálta távolról használni a webhookodat!**\n\n**Támadó IP:** ${ip}\n**Honnan:** ${origin || referer || 'Script/Postman'}\n**Akció:** 24 órás ban kiosztva.`,
-          color: 0xff0000 
+          title: `Rossz kombináció (${count})`,
+          description: `**IP:** ${ip}\n**Ok:** ${reason}\n` + formatGeoDataReport(geoData, page),
+          color: 0xffa500 
         }]
       }).catch(() => {});
 
-      return res.status(403).json({
-          error: "ACCESS_DENIED",
-          message: "Támadási kísérlet észlelve! Az IP címed le lett tiltva.",
-          warning: "A hatóságokat értesítettük."
-      });
-  }
+      // Csak a valid hiba növeli a ban számlálót
+      if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
+        banIp(ip);
+        const p = path.join(__dirname, 'public', 'banned-ip.html');
+        return fs.existsSync(p) ? res.status(403).sendFile(p) : res.status(403).send('Tiltva.');
+      }
 
-  // 2. WHITELIST -> CSENDES FAIL (Silent)
-  const validReasons = [
-      'Ctrl+U kombináció blokkolva (forráskód megtekintés)',
-      'Ctrl+Shift+I kombináció blokkolva (fejlesztői eszközök)',
-      'Ctrl+Shift+J kombináció blokkolva (fejlesztői konzol)',
-      'F12 gomb blokkolva (fejlesztői eszközök)',
-      'Ctrl+S kombináció blokkolva (oldal mentése)',
-      'Ctrl+P kombináció blokkolva (oldal nyomtatása)',
-      'Jobb kattintás blokkolva (kontextus menü)'
-  ];
-
-  if (!validReasons.includes(reason)) {
-      // CSENDES FAIL: Fake OK válasz, de NINCS Discord log.
-      return res.status(200).json({ ok: true });
-  }
-
-  // --- CSAK AKKOR JUTUNK IDE, HA A SZÖVEG ÉRVÉNYES (F12, stb) ---
-
-  if (MY_IPS.includes(ip)) {
-    return res.json({ ok: true, ignored: true });
-  }
-
-  // PING SZŰRŐ
-  if (reason) reason = reason.replace(/@/g, '[at]');
-
-  const geoData = await getGeo(ip); // Itt már a proxy-s verzió fut!
-  const count = recordBadAttempt(ip);
-
-  // Ez a jó webhookra megy (Alert), mert ez valós felhasználói hiba
-  axios.post(ALERT_WEBHOOK, {
-    username: "Kombináció figyelő",
-    embeds: [{
-      title: count >= MAX_BAD_ATTEMPTS ? 'IP TILTVA (Sok próbálkozás)' : `Rossz kombináció (${count}/${MAX_BAD_ATTEMPTS})`,
-      description: `**IP:** ${ip}\n**Ok:** ${reason || 'Ismeretlen'}\n` + formatGeoDataReport(geoData, page),
-      color: count >= MAX_BAD_ATTEMPTS ? 0xff0000 : 0xffa500
-    }]
-  }).catch(() => {});
-
-  if (count >= MAX_BAD_ATTEMPTS && !WHITELISTED_IPS.includes(ip)) {
-    banIp(ip);
-    const bannedPage = path.join(__dirname, 'public', 'banned-ip.html');
-    return fs.existsSync(bannedPage) ? res.status(403).sendFile(bannedPage) : res.status(403).send('Tiltva 24h.');
+  } else {
+      // --- 2. ESET: MANIPULÁLT ÜZENET (SPAM) -> REPORT WEBHOOK (Piros) ---
+      console.log(`⚠️ SPAM ÉSZLELVE: ${reason} (IP: ${ip})`);
+      
+      axios.post(REPORT_WEBHOOK, {
+        username: "SPAM SZŰRŐ",
+        embeds: [{
+          title: '⚠️ MANIPULÁLT ÜZENET (Spam kísérlet)',
+          description: `**Támadó IP:** ${ip}\n**Eredeti üzenet:** ${reason}\n**Oldal:** ${page}\n` + formatGeoDataReport(geoData, page),
+          color: 0xff0000 
+        }]
+      }).catch(() => {});
+      
+      // Visszaküldünk egy "OK"-t, hogy a hacker ne tudja, hogy lebukott, de a report már elment a "szemetesbe".
+      return res.json({ ok: true });
   }
 
   res.json({ ok: true });
 });
-    
-/* =========================
-// Statikus fájlok
-// ========================= */
-app.use(express.static(path.join(__dirname, 'public')));
 
-/* =========================
-// Számláló Proxy
-// ========================= */
+// Számláló
 app.get('/api/counter', async (req, res) => {
-  try {
-    if (!COUNTER_API_URL) return res.status(500).json({error: 'Config error'});
-    const r = await axios.get(COUNTER_API_URL);
-    res.json(r.data);
-  } catch { res.status(500).json({error: 'Error'}); }
+  try { if (!COUNTER_API_URL) return res.status(500).json({error: 'Config'}); const r = await axios.get(COUNTER_API_URL); res.json(r.data); } catch { res.status(500).json({error: 'Error'}); }
 });
 
-// Főoldal
-app.get('/', (req, res) => {
-  const f = path.join(__dirname, 'public', 'szaby', 'index.html');
-  return fs.existsSync(f) ? res.sendFile(f) : res.status(404).send('Nincs index');
-});
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => { const f = path.join(__dirname, 'public', 'szaby', 'index.html'); return fs.existsSync(f) ? res.sendFile(f) : res.status(404).send('Nincs index'); });
+app.use((req, res) => res.status(404).send('404'));
 
-// 404
-app.use((req, res) => res.status(404).send('404 Not Found'));
-
-app.listen(PORT, () => console.log(`Szerver elindult: http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));
