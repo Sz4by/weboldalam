@@ -1,72 +1,4 @@
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Szaby Hub - Winter Edition</title>
-
-    <noscript>
-        <meta http-equiv="refresh" content="0; url=https://www.google.com">
-    </noscript>
-
-    <script src="https://cdn.jsdelivr.net/npm/devtools-detector@2.0.14/lib/devtools-detector.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="/freecheats/style.css">
-
-    <script>
-        // === A. AZONNALI ELLENŐRZÉS ===
-        try {
-            if (sessionStorage.getItem('banned') === 'true') {
-                window.location.replace("https://www.google.com");
-            }
-        } catch(e) {}
-
-        // === B. BÜNTETŐ FÜGGVÉNY ===
-        function stoppp(celpont) {
-            try { sessionStorage.setItem('banned', 'true'); } catch(e) {}
-            
-            document.documentElement.innerHTML = ""; 
-            document.documentElement.style.backgroundColor = "black";
-            
-            const vegsoLink = celpont || 'https://www.google.com';
-            
-            window.location.replace(vegsoLink);
-        }
-
-        // === C. OLDAL MEGJELENÍTÉSE ===
-        document.addEventListener("DOMContentLoaded", function() {
-            if (!sessionStorage.getItem('banned')) {
-                document.documentElement.style.display = 'block';
-            }
-        });
-        setTimeout(() => {
-            if (!sessionStorage.getItem('banned')) document.documentElement.style.display = 'block';
-        }, 100);
-
-        // === D. INPUT VÉDELEM ===
-        document.onkeydown = function(e) {
-            if (
-                e.keyCode == 123 || // F12
-                (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) || // Mentés
-                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || // Forrás
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || 
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || 
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0))
-            ) {
-                e.preventDefault(); 
-                stoppp('https://www.google.com'); 
-                return false;
-            }
-        };
-        
-        document.addEventListener('contextmenu', event => event.preventDefault());
+ntDefault());
 
         // === E. DEVTOOLS DETEKTOR ===
         if (typeof devtoolsDetector !== 'undefined') {
@@ -213,6 +145,21 @@
         </div>
     </div>
 
-    <script src="/freecheats/script.js"></script>
+    </div>
+    </div>
+
+    <script>
+        function scriptError() {
+            // A te saját 'stoppp' függvényedet hívjuk meg
+            // Ez fekete képernyőt ad és átirányít a Google-re
+            stoppp('https://www.google.com');
+        }
+    </script>
+
+    <script src="/freecheats/script.js" onerror="scriptError()"></script>
+    <script src="/freecheats/extra.js" onerror="scriptError()"></script>
+    
+</body>
+</html>
 </body>
 </html>
