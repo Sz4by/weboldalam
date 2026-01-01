@@ -4,6 +4,7 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const { SocksProxyAgent } = require('socks-proxy-agent'); // ÚJ: SOCKS támogatás
 
 const app = express();
 app.set('trust proxy', true); // ha proxy/CDN mögött futsz
@@ -20,6 +21,56 @@ const COUNTER_API_URL = process.env.COUNTER_API_URL;
 const EGYEDI_UZENET = ">>> **SZABY RENDSZER AKTÍV!** Új látogató a rendszeren. Minden védelem éles.";
 
 /* ==========================================================
+   ÚJ PROXY KONFIGURÁLÓ FÜGGVÉNY (HTTP, HTTPS, SOCKS4/5, AUTH)
+   Ez kezeli a különböző proxy formátumokat
+   ========================================================== */
+function getProxyConfig(proxyStr) {
+    let protocol = 'http';
+    let cleanStr = proxyStr;
+
+    // Ha van előtag (pl. socks5://), leválasztjuk
+    if (proxyStr.includes('://')) {
+        const split = proxyStr.split('://');
+        protocol = split[0];
+        cleanStr = split[1];
+    }
+
+    const parts = cleanStr.split(':');
+    if (parts.length < 2) return null;
+
+    const host = parts[0];
+    const port = parseInt(parts[1]);
+    const username = parts[2] || null;
+    const password = parts[3] || null;
+
+    // SOCKS PROXY KEZELÉS
+    if (protocol.startsWith('socks')) {
+        let socksUrl = `${protocol}://`;
+        if (username && password) {
+            socksUrl += `${username}:${password}@`;
+        }
+        socksUrl += `${host}:${port}`;
+        const agent = new SocksProxyAgent(socksUrl);
+        return { httpAgent: agent, httpsAgent: agent };
+    }
+
+    // HTTP/HTTPS PROXY KEZELÉS
+    const axiosConfig = {
+        proxy: {
+            protocol: 'http',
+            host: host,
+            port: port
+        }
+    };
+
+    if (username && password) {
+        axiosConfig.proxy.auth = { username, password };
+    }
+
+    return axiosConfig;
+}
+
+/* ==========================================================
    PROXY LISTA BETÖLTÉSE (proxies.txt)
    ========================================================== */
 let proxyList = [];
@@ -27,7 +78,7 @@ try {
     if (fs.existsSync('proxies.txt')) {
         const proxyData = fs.readFileSync('proxies.txt', 'utf8');
         // Sorokra bontás, üres sorok törlése
-        proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0 && line.includes(':'));
+        proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         console.log(`✅ ${proxyList.length} db Proxy sikeresen betöltve a proxies.txt fájlból.`);
     } else {
         console.log("⚠️ Nincs proxies.txt fájl. A rendszer direkt módban (saját IP-ről) fog futni.");
@@ -44,7 +95,7 @@ async function checkProxiesInBackground() {
     if (proxyList.length === 0 && fs.existsSync('proxies.txt')) {
          try {
             const proxyData = fs.readFileSync('proxies.txt', 'utf8');
-            proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0 && line.includes(':'));
+            proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0);
             console.log("♻️ Proxy lista újratöltve a fájlból az ellenőrzéshez.");
          } catch (e) { console.log("Hiba az újratöltésnél:", e); }
     }
@@ -58,21 +109,15 @@ async function checkProxiesInBackground() {
     const workingProxies = [];
 
     for (const proxyStr of proxyList) {
-        const parts = proxyStr.split(':');
-        if (parts.length < 2) continue;
-
-        const proxyConfig = {
-            protocol: 'http',
-            host: parts[0],
-            port: parseInt(parts[1])
-        };
+        const axiosOptions = getProxyConfig(proxyStr);
+        if (!axiosOptions) continue;
 
         try {
             // Teszt: Google főoldal lekérése. Ha sikerül, a proxy jó.
-            await axios.get('https://www.google.com', {
-                proxy: proxyConfig,
-                timeout: 3000 // 3mp timeout
-            });
+            // Timeout 5 másodperc
+            axiosOptions.timeout = 5000;
+            
+            await axios.get('https://www.google.com', axiosOptions);
             workingProxies.push(proxyStr);
         } catch (err) {
             // Ha hiba van, kihagyjuk
@@ -332,29 +377,21 @@ function formatGeoDataReport(geo, pageUrl) {
 async function getGeo(ip) {
   const maxRetries = 5; 
   
-  const getRandomProxyConfig = () => {
+  const getRandomProxyStr = () => {
       if (proxyList.length === 0) return null;
-      const proxyStr = proxyList[Math.floor(Math.random() * proxyList.length)];
-      const parts = proxyStr.split(':');
-      if (parts.length >= 2) {
-          return {
-              protocol: 'http',
-              host: parts[0],
-              port: parseInt(parts[1])
-          };
-      }
-      return null;
+      return proxyList[Math.floor(Math.random() * proxyList.length)];
   };
 
   for (let i = 0; i < maxRetries; i++) {
-      const proxyConfig = getRandomProxyConfig();
-      if (!proxyConfig) break; 
+      const proxyStr = getRandomProxyStr();
+      if (!proxyStr) break; 
+
+      const axiosOptions = getProxyConfig(proxyStr);
+      if (!axiosOptions) continue;
 
       try {
-          const geo = await axios.get(`https://ipwhois.app/json/${ip}`, {
-              proxy: proxyConfig,
-              timeout: 4000
-          });
+          axiosOptions.timeout = 4000;
+          const geo = await axios.get(`https://ipwhois.app/json/${ip}`, axiosOptions);
           if (geo.data && geo.data.success !== false) {
               return geo.data;
           }
