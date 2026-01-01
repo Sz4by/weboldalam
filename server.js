@@ -4,7 +4,8 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
-const { SocksProxyAgent } = require('socks-proxy-agent'); // ÚJ: SOCKS támogatás
+// SOCKS Proxy támogatás (telepítése: npm install socks-proxy-agent)
+const { SocksProxyAgent } = require('socks-proxy-agent');
 
 const app = express();
 app.set('trust proxy', true); // ha proxy/CDN mögött futsz
@@ -13,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 const MAIN_WEBHOOK = process.env.MAIN_WEBHOOK;
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK; // Belső logok (F12, Admin, Valós hibák)
 const REPORT_WEBHOOK = process.env.REPORT_WEBHOOK; // Támadások logja (Spam, Manipulált kérések)
+// Ha nincs külön PROXY_WEBHOOK, akkor az ALERT_WEBHOOK-ra küldi az infókat
+const PROXY_WEBHOOK = process.env.PROXY_WEBHOOK || process.env.ALERT_WEBHOOK;
+
 const PROXYCHECK_API_KEY = process.env.PROXYCHECK_API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // jelszó az /admin oldalhoz
 const COUNTER_API_URL = process.env.COUNTER_API_URL; 
@@ -21,8 +25,25 @@ const COUNTER_API_URL = process.env.COUNTER_API_URL;
 const EGYEDI_UZENET = ">>> **SZABY RENDSZER AKTÍV!** Új látogató a rendszeren. Minden védelem éles.";
 
 /* ==========================================================
-   ÚJ PROXY KONFIGURÁLÓ FÜGGVÉNY (HTTP, HTTPS, SOCKS4/5, AUTH)
-   Ez kezeli a különböző proxy formátumokat
+   SEGÉDFÜGGVÉNY: PROXY ÁLLAPOT KÜLDÉSE DISCORDRA
+   ========================================================== */
+async function logProxyStatus(title, message, color) {
+    if (!PROXY_WEBHOOK) return;
+    try {
+        await axios.post(PROXY_WEBHOOK, {
+            username: "Proxy Monitor",
+            embeds: [{
+                title: title,
+                description: message,
+                color: color, // Decimal színkód (pl. Piros: 16711680, Zöld: 65280)
+                footer: { text: `Rendszeridő: ${new Date().toLocaleTimeString()}` }
+            }]
+        });
+    } catch (e) { console.error("Webhook küldési hiba:", e.message); }
+}
+
+/* ==========================================================
+   PROXY KONFIGURÁLÓ FÜGGVÉNY (HTTP, HTTPS, SOCKS4/5, AUTH)
    ========================================================== */
 function getProxyConfig(proxyStr) {
     let protocol = 'http';
@@ -77,7 +98,6 @@ let proxyList = [];
 try {
     if (fs.existsSync('proxies.txt')) {
         const proxyData = fs.readFileSync('proxies.txt', 'utf8');
-        // Sorokra bontás, üres sorok törlése
         proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         console.log(`✅ ${proxyList.length} db Proxy sikeresen betöltve a proxies.txt fájlból.`);
     } else {
@@ -88,16 +108,15 @@ try {
 }
 
 /* ==========================================================
-   HÁTTÉRFOLYAMAT - PROXY CHECKER (15-30 percenként)
+   HÁTTÉRFOLYAMAT - PROXY CHECKER (OKOS FIGYELŐ)
    ========================================================== */
 async function checkProxiesInBackground() {
-    // Ha üres a lista, próbáljuk meg újratölteni a fájlból
+    // Ha üres a lista, próbáljuk meg újratölteni
     if (proxyList.length === 0 && fs.existsSync('proxies.txt')) {
          try {
             const proxyData = fs.readFileSync('proxies.txt', 'utf8');
             proxyList = proxyData.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            console.log("♻️ Proxy lista újratöltve a fájlból az ellenőrzéshez.");
-         } catch (e) { console.log("Hiba az újratöltésnél:", e); }
+         } catch (e) {}
     }
 
     if (proxyList.length === 0) {
@@ -107,36 +126,53 @@ async function checkProxiesInBackground() {
 
     console.log(`🔄 [Háttér] Proxyk ellenőrzése indul... (${proxyList.length} db)`);
     const workingProxies = [];
+    let failedCount = 0;
 
     for (const proxyStr of proxyList) {
         const axiosOptions = getProxyConfig(proxyStr);
         if (!axiosOptions) continue;
 
         try {
-            // Teszt: Google főoldal lekérése. Ha sikerül, a proxy jó.
-            // Timeout 5 másodperc
-            axiosOptions.timeout = 5000;
-            
+            axiosOptions.timeout = 5000; // 5mp timeout
             await axios.get('https://www.google.com', axiosOptions);
             workingProxies.push(proxyStr);
         } catch (err) {
-            // Ha hiba van, kihagyjuk
+            failedCount++;
         }
     }
 
-    console.log(`✅ [Háttér] Kész. Működő proxyk: ${workingProxies.length} (Eredeti: ${proxyList.length})`);
+    console.log(`✅ [Háttér] Kész. Működő: ${workingProxies.length}, Hibás: ${failedCount}`);
+    
+    // --- ÉRTESÍTÉS KÜLDÉSE HA BAJ VAN, VAGY HA FRISSÜLT A LISTA ---
+    const ratio = workingProxies.length / proxyList.length;
+    
+    // Csak akkor küldünk logot, ha történt valami érdemleges
+    // 1. Eset: Nincs működő proxy (KRITIKUS)
+    if (workingProxies.length === 0) {
+        await logProxyStatus(
+            "🚨 KRITIKUS: NINCS MŰKÖDŐ PROXY!",
+            `**Minden proxy kiesett!** A rendszer kénytelen a saját IP-címét használni!\n\n**Összes:** ${proxyList.length}\n**Hibás:** ${failedCount}`,
+            0xff0000 // Piros
+        );
+    } 
+    // 2. Eset: Kevesebb mint a fele működik (FIGYELMEZTETÉS)
+    else if (ratio < 0.5) {
+        await logProxyStatus(
+            "⚠️ Figyelem: Sok hibás Proxy",
+            `A proxyk több mint fele nem válaszol.\n\n**Működő:** ${workingProxies.length}\n**Hibás:** ${failedCount}`,
+            0xffa500 // Narancs
+        );
+    }
+    // 3. Eset: Minden rendben (csak konzolba írjuk, ne spammelje a Discordot, vagy opcionálisan ide is tehetsz logot)
     
     if (workingProxies.length > 0) {
         proxyList = workingProxies;
-    } else {
-        console.log("⚠️ [Háttér] Figyelem: Egyik proxy sem válaszolt.");
     }
 
     scheduleNextProxyCheck();
 }
 
 function scheduleNextProxyCheck() {
-    // 15-30 perc közötti véletlenszerű időzítés
     const minTime = 15 * 60 * 1000;
     const maxTime = 30 * 60 * 1000;
     const randomTime = Math.floor(Math.random() * (maxTime - minTime + 1) + minTime);
@@ -265,9 +301,8 @@ if(initBannedData && initBannedData.ips) {
 }
 
 /* =========================
-   RÉSZLETES GEO LOG LISTÁK (3 KÜLÖN) - AZ EREDETI HOSSZÚ LISTÁK
+   GEO LOG FORMATTEREK
    ========================= */
-// 1) TELJES lista – általános HTML látogatókhoz
 function formatGeoDataTeljes(geo) {
   return (
     `**IP-cím:** ${geo.ip || 'Ismeretlen'}\n` +
@@ -372,7 +407,7 @@ function formatGeoDataReport(geo, pageUrl) {
 
 
 /* ====================================================================
-   OKOS GEO LEKÉRDEZÉS (PROXY FORGATÁS)
+   OKOS GEO LEKÉRDEZÉS (PROXY FORGATÁS + HIBAKEZELÉS)
    ==================================================================== */
 async function getGeo(ip) {
   const maxRetries = 5; 
@@ -395,12 +430,23 @@ async function getGeo(ip) {
           if (geo.data && geo.data.success !== false) {
               return geo.data;
           }
-      } catch (err) {}
+      } catch (err) {
+          // HIBA ESETÉN LOGOLÁS, HA AKAROD
+          console.log(`⚠️ Proxy hiba (${proxyStr}): ${err.message}. Próbálkozás máshogy...`);
+      }
   }
 
-  // Ha a proxyk nem mentek, direkt
+  // Ha minden proxy meghalt, direkt lekérés (fallback)
   try {
       console.log("⚠️ Minden proxy sikertelen, direkt lekérés...");
+      
+      // HA DIREKT LEKÉRÉSRE KÉNYSZERÜLÜNK, SZÓLJON A WEBHOOK
+      await logProxyStatus(
+          "🚨 MINDEN PROXY SIKERTELEN!",
+          "A rendszer nem tudott proxyn keresztül kapcsolódni.\n**Akció:** Átváltás SAJÁT IP-re (Direkt mód).",
+          0xff0000
+      );
+
       const geo = await axios.get(`https://ipwhois.app/json/${ip}`, { timeout: 5000 });
       if (geo.data.success === false) return {};
       return geo.data;
